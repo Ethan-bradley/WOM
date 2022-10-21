@@ -34,7 +34,7 @@ class ArmyCombat():
 			if a.controller.get_country().Military - a.size*0.1 < 0:
 				self.rebel(g,a)
 			else:
-				g.GameEngine.modify_country_by_name(a.controller.country.name, 'Military', a.controller.get_country().Military - a.size*0.1)
+				g.GameEngine.modify_country_by_name(a.controller.country.name, 'Military', a.controller.get_country().Military - a.size*0.5)
 				g.save()
 
 	def rebel(self,g,a):
@@ -162,6 +162,8 @@ class ArmyCombat():
 		loser_country.money[5] -= loser_country.money[5]*subtract
 		loser.save()
 		g.save()
+		if loser_country.capital - h.capital*0.9 < 0:
+			loser_country.capital = 10
 		g.GameEngine.modify_country_by_name(loser.country.name, 'capital', loser.get_country().capital - h.capital*0.9)
 		g.save()
 		#loser.get_country().Population -= 

@@ -28,7 +28,7 @@ def add_players(temp, type):
 	    f.color = f.country.color
 	    f.robot = True
 	    f.save()
-	    curr_player = Player.objects.filter(name=f.name, game=temp)[0]
+	    curr_player = Player.objects.filter(game=temp, name=f.name)[0]
 	    #Creates Map Interface
 	    if type:
 	    	GraphCountryInterface.objects.create(game=temp,controller=curr_player, country=curr_player.country)
@@ -56,13 +56,13 @@ def add_players(temp, type):
 	    #Adds existing players TariffObjects to this player:
 	    control = Tariff.objects.filter(game=temp, curr_player=curr_player)[0]
 	    for p in player_list:
-	        itf = IndTariff(controller=control, key=p, tariffAm=0)
+	        itf = IndTariff(controller=control, key=p, tariffAm=0.1)
 	        itf.save()
 	    #Adds an IndTariff object related to this player to each existing player's tariff object.
 	    tariffList = Tariff.objects.filter(game=temp)
 	    for p in tariffList:
 	        if p.curr_player.game == temp:
-	            itf = IndTariff(controller=p, key=curr_player, tariffAm=0)
+	            itf = IndTariff(controller=p, key=curr_player, tariffAm=0.1)
 	            itf.save()
 	            """iForm = AddIndTariffForm(request.POST)
 	            itf = iForm.save(commit=False)
@@ -91,6 +91,9 @@ def add_players(temp, type):
 	#temp.GameEngine.start_capital(temp)
 	#temp.save()
 def add_neutral(temp):
+    neutral_exist = Player.objects.filter(name="Neutral", game=temp)
+    if len(neutral_exist) > 0:
+        return
     form = JoinGameForm()
     f = form.save(commit=False)
     countryList2 = ''

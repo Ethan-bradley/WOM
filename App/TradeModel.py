@@ -28,7 +28,7 @@ class Trade():
     self.foreign_investment = [[0 for j in range(0,len(self.CountryList))] for i in range(0,len(self.CountryList))]
     self.exchangeRateArr = [[] for j in self.CountryList]
     for i in self.CountryList:
-      self.Tariffs.append([0 for j in self.CountryList])
+      self.Tariffs.append([0.1 for j in self.CountryList])
       self.Sanctions.append([0 for j in self.CountryList])
       self.investment_restrictions = [0 for j in self.CountryList]
       self.currencyReserves.append([0 for j in self.CountryList])
@@ -90,7 +90,8 @@ class Trade():
       if (math.isnan(Country[i].real_interest_rate)):
         Country[i].real_interest_rate = 0.1
 
-      savings_money_flow = 0.166*t - 8.333*(Country[i].real_interest_rate - equil_rate)+np.exp(-Country[i].money[1]*0.5)
+      #savings_money_flow = 0.166*t - 8.333*(Country[i].real_interest_rate - equil_rate)+np.exp(-Country[i].money[1]*0.5)
+      savings_money_flow = 0.566*t - 8.333*(Country[i].real_interest_rate - equil_rate)+np.exp(-Country[i].money[1]*0.5)
       #print("savings money", savings_money_flow)
       new_rate = np.exp(-0.02*(savings_money_flow - t))
 
@@ -312,10 +313,10 @@ def parse_flows(Countries, good_balance, trade_balance, flows, goods_index, mone
     #Gets the flow value to/from that country of this particular good (getting the difference between the first and last arrows).
     flow = flows[1, len(Countries) + 2 + i] + flows[0, i + 2]
     #print(country_names[i],": ",flow)
-    good_balance[i] += flow*0.05
+    good_balance[i] += flow*0.25
     if math.isnan(price):
       price = 0.0001
-    value = flow*price*0.05
+    value = flow*price*0.25
     trade_balance[i] += value
     if not initial:
       if (Countries[i].money[1] - value*exchangeRates[i]) >= 0:

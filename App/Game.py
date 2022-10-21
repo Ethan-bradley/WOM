@@ -27,6 +27,7 @@ class GameEngine():
 			for i in range(0,num_players):
 				self.EconEngines.append(Country())
 				self.EconEngines[i].run_turn(13)
+				self.EconEngines[i].Military = 50000
 		self.TradeEngine = Trade(self.EconEngines,self.nameList)
 		self.ArmyCombat = ArmyCombat()
 		self.var_list = ['Welfare','Education','Military','Infrastructure','Science']
@@ -80,9 +81,10 @@ class GameEngine():
 		all_armies = Army.objects.filter(game=g)
 		for a in all_armies:
 			a.moved = False
-		#self.ArmyCombat.doCombat(g)
+		self.ArmyCombat.doCombat(g)
 		#Running engine
 		for e in self.EconEngines:
+			#import pdb; pdb.set_trace();
 			e.run_turn(1)
 			#e.save_GoodsPerCapita('default_graph.png')
 		self.fix_variables()
@@ -112,11 +114,18 @@ class GameEngine():
 				e.Resentment = 0.15
 			if e.Infrastructure > 100:
 				e.Infrastructure = 100
-			for i in range(0,len(e.goods)):
+			money_average = sum(e.money[0:5])/5
+			extra = 0
+			for i in range(0, len(e.goods)):
 				if e.money[i] < 0 or math.isnan(e.money[i]):
 					e.money[i] = 500
+				if e.money[i] > money_average*3:
+					extra = (e.money[i] - money_average)/5
+					e.money[i] = e.money[i] - extra*5
 				if e.goods[i] < 0 or math.isnan(e.goods[i]):
 					e.goods[i] = 1000
+			for i in range(0, 5):
+				e.money[i] += extra
 			if math.isnan(e.interest_rate):
 				e.interest_rate = 0.1
 			if math.isnan(e.real_interest_rate):
@@ -234,7 +243,15 @@ class GameEngine():
 			country = self.get_country(index)
 			self.calculate_differences(g, p, country)
 			self.get_hex_numbers(g, p, country)
+			for i in range(0,5):
+				if math.isnan(country.money[i]):
+					country.money[i] = 500
 			prev_revenue = country.IncomeTax*country.money[0] + country.CorporateTax*country.money[4]
+			if math.isnan(country.money[5]):
+				country.money[5] = prev_revenue
+			if math.isnan(country.money[8]):
+				country.money[8] = country.money[2] + country.money[3] + country.money[5]
+			
 			diff = country.money[5] - prev_revenue
 
 			country.IncomeTax = p.IncomeTax
@@ -284,7 +301,7 @@ class GameEngine():
 
 			self.TradeEngine.investment_restrictions[index] = p.investment_restriction
 			#Rebellions
-			if country.Resentment > 0.05:
+			if country.Resentment > 0.06:
 				self.rebel(g, p, country.Resentment)
 			#Tarriffs
 			#import pdb; pdb.set_trace()
@@ -557,6 +574,9 @@ class GameEngine():
 		hex_list = Hexes.objects.filter(game=g, controller=p, water=False)
 		if p.name != "Neutral" and (len(hex_list) > 0):
 			neutral_player = Player.objects.filter(game=g,name="Neutral")[0]
+			chosen_hex = hex_list[0]
+			if chosen_hex.center == True and len(hex_list) > 1:
+				chosen_hex = hex_list[1]
 			self.switch_hex(hex_list[0], neutral_player, g)
 			Army.objects.create(game=g, size=hex_list[0].population*res*100,controller=neutral_player, naval=False, location=hex_list[0], name=hex_list[0].name+" Rebel Army")
 			message2 = "In "+p.name+"'s territory a rebel army of size "+str(round(hex_list[0].population*res*100,0))+" rose up in "+hex_list[0].name

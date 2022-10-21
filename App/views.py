@@ -22,6 +22,7 @@ from .budgetgraph import budget_graph
 from .helper import add_players, add_neutral
 from django.db import reset_queries
 import math
+import random
 #import django_rq
 #from rq import Queue
 #from worker import conn
@@ -533,8 +534,8 @@ def map(request, g, p, l, lprev):
                 if lprev == 'null':
                     if len(v) == 0:
                         #country = p.get_country()
-                        if total_size + s > 1000000:
-                            messages.warning(request, f'The total size of all your armies combined cannnot be more than 1m!')
+                        if total_size + s > 10000000:
+                            messages.warning(request, f'The total size of all your armies combined cannnot be more than 10m!')
                             return redirect('map', gtemp, ptemp, 'null', 'null')
                         if p.get_country().Military - s >= 0:
                             g.GameEngine.modify_country_by_name(p.country.name, 'Military', p.get_country().Military - s)
@@ -550,8 +551,8 @@ def map(request, g, p, l, lprev):
                             messages.success(request, f'Army succesfully disbanded!')
                             return redirect('map', gtemp, ptemp, 'null', 'null')
                         s = s - v[0].size
-                        if total_size + s > 1000000:
-                            messages.warning(request, f'The total size of all your armies combined cannnot be more than 1m!')
+                        if total_size + s > 10000000:
+                            messages.warning(request, f'The total size of all your armies combined cannnot be more than 10m!')
                             return redirect('map', gtemp, ptemp, 'null', 'null')
                         if p.get_country().Military - s >= 0:
                             g.GameEngine.modify_country_by_name(p.country.name, 'Military', p.get_country().Military - s)
@@ -612,14 +613,22 @@ def map(request, g, p, l, lprev):
     #Map Mode Form
     mi = MapInterfaceForm(instance=t)
     #If lprev is not null an army is selected and it moves the army if it is a valid move.
-    if lprev != 'null':
-        h = Hexes.objects.filter(game=g, hexNum=lprev)[0]
+    if lprev != 'null' and l != lprev:
+        lprev = int(lprev)
+        if lprev < 0:
+            new_lprev= -lprev % 100
+            h = Hexes.objects.filter(game=g, hexNum=new_lprev)[0]
+        else:
+            h = Hexes.objects.filter(game=g, hexNum=lprev)[0]
         v = Army.objects.filter(game=g,location=h)
         
         h2 = Hexes.objects.filter(game=g, hexNum=l)[0]
         if len(v) == 0:
             return redirect('map', gtemp, ptemp, 'null', 'null')
-        v = v[0]
+        if lprev < 0:
+            v = v[-lprev // 100]
+        else:
+            v = v[0]
         if v.moved:
             messages.warning(request, f'This army has already been moved!')
             return redirect('map', gtemp, ptemp, 'null', 'null')
@@ -653,17 +662,26 @@ def map(request, g, p, l, lprev):
         return redirect('map', gtemp, ptemp, 'null', 'null')
     #data = serializers.serialize("json", <col>)
     #If a tiles hasn't been selected load regular army form
+    random_index = -1
     if l == 'null':
         f = ArmyForm()
     else:
         #If a tiles has been selected, load that particular army if an army is on it, 
         #if not then load a basic Army form with that location defaulted into the form.
         h = Hexes.objects.filter(game=g, hexNum=l)[0]
-        v = Army.objects.filter(game=g,location=h)
+        v = Army.objects.filter(game=g,location=h, controller=player)
         if not v:
+            if h.controller != player:
+                messages.warning(request, f'You cannot build an army in another players territory!')
+                return redirect('map', gtemp, ptemp, 'null', 'null')
             f = ArmyForm(initial={'location':h})
         else:
-            v = v[0]
+            if l == lprev:
+                #import pdb; pdb.set_trace();
+                random_index = random.randrange(0, len(v))
+                v = v[random_index]
+            else:
+                v = v[0]
             print(v)
             f = ArmyForm(instance=v)
             if v.controller != p:
@@ -686,7 +704,8 @@ def map(request, g, p, l, lprev):
         'maintenace':total_size*0.1,
         'resources':t.mode == "RE",
         'notifications': Notification.objects.filter(game=g, year__gt=player.get_country().time - 23)[::-1],
-        'board_size':g.board_size
+        'board_size':g.board_size,
+        'curr_army_index':-random_index
     }
     return render(request, 'App/map.html', context)
 
@@ -829,10 +848,11 @@ def gamegraph(g, p, context, graphmode, game):
     create_compare_graph("ScienceArr", "Science", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
     create_compare_graph("UnemploymentArr", "Unemployment", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
     create_compare_graph("EducationArr2", "Education", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
-    create_compare_graph("InfrastructureArr", "Infrastructure", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
+    create_compare_graph("InfrastructureArray", "Infrastructure", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
     create_compare_graph("PopulationArr", "Population", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
     create_compare_graph("GDPPerCapita", "Real_GDP_Per_Capita_in_$US", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
     create_compare_graph("CapitalArr", "Capital", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
+    create_compare_graph("CapitalPerPerson", "Capital_Per_Person", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
     create_compare_graph("GoodsPerCapita", "GoodsPerCapita", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
     create_compare_graph("InflationTracker", "Inflation", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
     create_compare_graph("ResentmentArr", "Resentment", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
@@ -908,8 +928,10 @@ def trade(request, g, p):
         'Year':[]
         }
         variable = getattr(game, attribute)
+        #ADD CHECK HERE
         #import pdb; pdb.set_trace();
         for j in game.nameList:
+            #if j != 'Neutral':
             data['Rate'] += variable[country][j][start:]
             data['Year'] += [i for i in range(0,len(variable[country][j][start:]))]
             data['Country'] += [j for i in range(0,len(variable[country][j][start:]))]
@@ -922,10 +944,10 @@ def trade(request, g, p):
     data3 = []
     titles = []
     create_foreign_investment_pie(g.GameEngine.TradeEngine.CountryName.index(p.country.name), g.GameEngine.TradeEngine, titles, data3)
-    create_trade_rate_graph(g.GameEngine,"TarriffsArr","Tarriffs",t.country.name,24)
-    create_trade_rate_graph(g.GameEngine,"SanctionsArr","Sanctions",t.country.name,24)
-    create_trade_rate_graph(g.GameEngine,"ForeignAid","Foreign Aid",t.country.name,24)
-    create_trade_rate_graph(g.GameEngine,"MilitaryAid","Military Aid",t.country.name,24)
+    create_trade_rate_graph(g.GameEngine,"TarriffsArr","Tarriffs",t.country.name,20)
+    create_trade_rate_graph(g.GameEngine,"SanctionsArr","Sanctions",t.country.name,20)
+    create_trade_rate_graph(g.GameEngine,"ForeignAid","Foreign Aid",t.country.name,20)
+    create_trade_rate_graph(g.GameEngine,"MilitaryAid","Military Aid",t.country.name,20)
     other_player = Player.objects.filter(country=t.country)[0]
     budget_graph(other_player.get_country(), 17, "templates/App/graphs/"+p.name+"tradebudgetgraph.html")
     if request.method == 'POST':

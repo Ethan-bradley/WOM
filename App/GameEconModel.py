@@ -52,6 +52,7 @@ class Country():
     self.EducationArr = []
     self.MilitaryArr = []
     self.ScienceBudgetArr = []
+    self.CapitalPerPerson = []
     #Tracking Variables
     self.Unemployment = 0
     self.Bonds = 0
@@ -125,7 +126,7 @@ class Country():
     self.Bonds = 0
     self.Government_Savings = 0
     self.Education_Divisor = 1600
-    self.MilitarySpend = 0.01
+    self.MilitarySpend = 0.16
     
     #Money Printing
     self.MoneyPrinting = 100
@@ -159,6 +160,8 @@ class Country():
     self.capital = 10
     self.employment_per_capital = 0.2
     self.last_capital = 9
+    self.bankrupt = False;
+    self.near_bankrupt = False;
 
     self.lastcapital = 0
     self.lastPopulation = 0
@@ -167,7 +170,7 @@ class Country():
 
     #Education
     self.Education = 9
-    self.EducationSpend = 0.99
+    self.EducationSpend = 0.84
     self.run_first()
     self.real_interest_rate = 0.02
 
@@ -298,6 +301,19 @@ class Country():
       self.transG1 = np.zeros((5,5))
       #Transformation Matrix
       #self.GovernmentInvest
+      if math.isnan(self.Household_Savings):
+        self.Household_Savings = 500
+      if math.isnan(self.Corporate_Savings):
+        self.Corporate_Savings = 200
+      if math.isnan(self.PersonalWithdrawls):
+        self.PersonalWithdrawls = 0
+      if math.isnan(self.interest):
+        self.interest = 0
+      if math.isnan(self.Bonds):
+        self.Bonds = 0
+      if math.isnan(self.pop_matrix[0][0]):
+        self.setup_demography()
+
       self.ConsumptionRate = 1 - self.SavingsRate - self.IncomeTax
       self.trans1 = np.array([[0,self.PersonalWithdrawls,0,0,self.Wages,self.GovWelfare,0,0,0,0],
                         [self.SavingsRate, self.ReserveRatio+self.ExtraReserve, 0,0,1-self.Wages-self.CorporateTax-self.InvestmentRate+(self.interest/self.money[4]),0,0,0,0,1],
@@ -317,7 +333,7 @@ class Country():
       #self.transG1[0][1] = self.money[2]/(self.money[2]+self.money[3]+self.money[5]*self.GovGoods)
       #self.transG1[2][1] = self.money[5]*self.GovGoods/(self.money[2]+self.money[3]+self.money[5]*self.GovGoods)
       #(-Population*ScienceRate*np.exp((-4/(Population*ScienceRate))*capital)+ScienceRate)/goods[1]
-      self.Infrastructure_Real = (((self.money[3]*self.InvestmentDirection[3])/(self.money[2]+self.money[3]+self.money[5]*self.GovGoods))*self.InvestmentDirection[3]*self.goods[1] - self.ScienceRate)*0.0003
+      self.Infrastructure_Real += (((self.money[3]*self.InvestmentDirection[3])/(self.money[2]+self.money[3]+self.money[5]*self.GovGoods))*self.InvestmentDirection[3]*self.goods[1] - self.ScienceRate)*0.00003
       self.Infrastructure = min(0.1,self.Infrastructure_Real)
       
       #self.Infrastructure = 0.1
@@ -337,9 +353,16 @@ class Country():
         #self.goods[2] *= ((self.money[5]*self.GovGoods/(self.money[2]+self.money[3]+self.money[5]*self.GovGoods))*Total)/self.goods[2]
       #self.goods[3] *= ((self.money[3]*self.RawInvestment/(self.money[2]+self.money[3]+self.money[5]*self.GovGoods))*Total)
       #Run each cycle, creates transformation matrix
+      #Money Printing
+      if math.isnan(self.money[9]):
+        self.money[9] = 500
+      self.money[9] += self.MoneyPrinting
       for i in range(0,5):
         if math.isnan(self.money[i]):
           self.money[i] = 800
+      for i in range(5,10):
+        if math.isnan(self.money[i]):
+          self.money[i] = 0
       if self.money[1] < 0:
         self.money[1] = 5
         self.recession(0.9)
@@ -355,7 +378,6 @@ class Country():
         self.money[3] = 5
       if self.money[4] < 0:
         self.money[4] = 5
-      
       #Runs money matrix with trans1
       self.money = np.dot(self.trans1,self.money)
 
@@ -404,27 +426,27 @@ class Country():
       if Education_Unemployment < 0:
         Education_Unemployment = 0
       if len(self.InflationTracker) > 15:
-        inflation_expectation = max(min(sum(self.InflationTracker[-8:])/8, 20), -1.5)
+        inflation_expectation = max(min(sum(self.InflationTracker[-8:])/8, 20), -5)
         variation = stat.stdev(self.InflationTracker[8:])
         print("Variation: ",variation, " Inflation Expectation: ",inflation_expectation)
         avg_inflation = sum(self.InflationTracker[-3:])/3
-        NewPhillips = min(np.exp(-(variation / 10)*(self.Inflation - inflation_expectation - 1)) + 1, 6)
+        NewPhillips = min(np.exp(-(variation / 30)*(self.Inflation - inflation_expectation - 1)) + 1, 10)
         
         oldPhillps = self.Phillips
         self.Phillips = NewPhillips #sum(self.PhillipsArr[-4:])/4
         
 
-        if self.Phillips > oldPhillps + 0.25:
-          self.Phillips = oldPhillps + 0.25
-        elif self.Phillips < oldPhillps - 0.25:
-          self.Phillips = oldPhillps - 0.25
+        if self.Phillips > oldPhillps + 2:
+          self.Phillips = oldPhillps + 2
+        elif self.Phillips < oldPhillps - 2:
+          self.Phillips = oldPhillps - 2
 
         if self.time > 25 and abs(oldPhillps - self.PhillipsArr[len(self.PhillipsArr) - 3]) <= 0.1:
           self.Phillips = oldPhillps
       else:
         self.Phillips = 0
       self.PhillipsArr.append(self.Phillips)
-      self.StructuralUnemployment = Education_Unemployment + self.Phillips/100
+      self.StructuralUnemployment = Education_Unemployment + (self.Phillips/100)
       if self.StructuralUnemployment < 0:
         self.StructuralUnemployment = 0
       self.Unemployment = self.StructuralUnemployment
@@ -442,9 +464,6 @@ class Country():
       #M0
       self.M0 = self.money[0]+self.money[1]+self.money[2]+self.money[3]+self.money[4]+self.money[5]
       print('M0: '+str(self.M0))
-
-      #Money Printing
-      self.money[9] += self.MoneyPrinting
       
       #Savings:
       if self.Inflation >= 0:
@@ -475,6 +494,8 @@ class Country():
         self.interest_rate = self.real_interest_rate + 0.02
       
       #-0.7*np.exp(((self.Population*self.ScienceRate - self.capital)*-1)/((self.money[1] - self.BondWithdrawl)/self.investment_good_price))+0.7
+      if math.isnan(self.Corporate_Cummalative_Loans):
+        self.Corporate_Cummalative_Loans = 0
       self.interest = self.interest_rate*self.Corporate_Cummalative_Loans
       self.Corporate_Cummalative_Loans += (self.interest_rate*self.money[1]*self.CorporateDebtRate - self.interest)
       self.PersonalWithdrawls = (self.interest_rate*(self.Household_Savings/(self.Household_Savings+self.Corporate_Savings)))/2
@@ -487,9 +508,12 @@ class Country():
         self.money[5] += self.BondWithdrawl
         self.money[1] -= self.BondWithdrawl
       else:
+        self.bankrupt = True
         print("Country went bankrupt!")
         self.money[5] += self.money[1]*0.5
         self.money[1] = self.money[1]*0.5
+      if self.BondWithdrawl > 0.4*self.money[1]:
+        self.near_bankrupt = True
       self.GovDebt *= (1 + self.interest_rate)
       if (self.Government_Savings + self.BondWithdrawl) < 1:
         self.GovDebt +=  self.BondWithdrawl
@@ -523,7 +547,7 @@ class Country():
       else:
         consumption_change = 0
       if (self.time > 12):
-         temp_resentment = pow(abs(temp_inflation)*0.01, 0.3)*pow(consumption_change + 1, -0.4)*pow(self.Unemployment, 0.3)*0.4
+         temp_resentment = pow(abs(temp_inflation)*0.01, 0.1)*pow(consumption_change + 1, -0.5)*pow(self.Unemployment, 0.4)*0.4
          self.Resentment = self.Resentment*0.8 + temp_resentment*0.2
       else:
         self.Resentment = 0
@@ -533,6 +557,8 @@ class Country():
       #self.capital += (self.money[3]/(self.money[2]+self.money[3]+self.money[5]*self.GovGoods))*self.InvestmentDirection[4]*self.goods[1] #min((money[3]/(money[2]+money[3]+money[5]*GovGoods))*InvestmentDirection[4]*goods[1], (Population - Researchers - Innovators)*ScienceRate)
       self.last_capital2 = self.capital
       self.capital += self.goods[1]
+      if self.capital < 0:
+        self.capital = 1000
       #Infrastructure Invest
       #self.capital += ((self.money[3]*self.InvestmentDirection[3])/(self.money[2]+self.money[3]+self.money[5]*self.GovGoods))*self.InvestmentDirection[3]*self.goods[1]
       self.last_capital = self.capital
@@ -621,7 +647,8 @@ class Country():
       self.Household_SavingsArr.append(self.Household_Savings)
       self.Corporate_SavingsArr.append(self.Corporate_Savings)
       self.GoodsBalance.append(self.tradeBalance)
-      self.InfrastructureArray.append(self.Infrastructure)
+      self.InfrastructureArray.append(self.Infrastructure_Real)
+      self.CapitalPerPerson.append(self.capital/self.PopulationArr[len(self.PopulationArr)-1])
       print(self.tradeBalance)
       self.UnemploymentArr.append(self.Unemployment)
       #Resets
@@ -641,6 +668,18 @@ class Country():
     capital_goods = 0
     gov_goods = 0
     raw_goods = [0 for i in range(0,len(self.RawDemand))]
+    for i in range(0,len(self.HouseCapital)):
+      if math.isnan(self.HouseCapital[i]):
+        self.HouseCapital[i] = 10
+    for i in range(0,len(self.CapitalCapital)):
+      if math.isnan(self.CapitalCapital[i]):
+        self.CapitalCapital[i] = 10
+    for i in range(0,len(self.GovCapital)):
+      if math.isnan(self.GovCapital[i]):
+        self.GovCapital[i] = 10
+    for i in range(0,len(self.RawCapital)):
+      if math.isnan(self.RawCapital[i]):
+        self.RawCapital[i] = 10
     for i in range(0, len(self.RawDemand)):
       print("Raw i",i)
       print(len(self.RawPrices))
