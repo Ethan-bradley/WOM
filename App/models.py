@@ -253,6 +253,14 @@ class GraphInterface(models.Model):
 	CONSUMER = 'ConsumerGoods'
 	STEEL = 'Steel'
 	MACHINERY = 'Machinery'
+	IRONPROD = "IronP"
+	WHEATPROD = "WheatP"
+	COALPROD = 'CoalP'
+	OILPROD = 'OilP'
+	FOODPROD = 'FoodP'
+	CONSUMERPROD = 'ConsumerGoodsP'
+	STEELPROD = 'SteelP'
+	MACHINERYPROD = 'MachineryP'
 	MODES = [
 	(INCOMETAX, 'Income Tax'),
 	(CORPORATETAX, 'Corporate Tax'),
@@ -269,7 +277,15 @@ class GraphInterface(models.Model):
 	(FOOD, 'Food Prices'),
 	(CONSUMER, 'Consumer Goods Prices'),
 	(STEEL, 'Steel Prices'),
-	(MACHINERY, 'Machinery Prices')
+	(MACHINERY, 'Machinery Prices'),
+	(IRONPROD,'Iron Production'),
+	(WHEATPROD, 'Wheat Production'),
+	(COALPROD, 'Coal Production'),
+	(OILPROD, 'Oil Production'),
+	(FOODPROD, 'Food Production'),
+	(CONSUMERPROD, 'Consumer Goods Production'),
+	(STEELPROD, 'Steel Production'),
+	(MACHINERYPROD, 'Machinery Production')
 	]
 	mode = models.CharField(max_length=20,choices=MODES,default=INCOMETAX)
 

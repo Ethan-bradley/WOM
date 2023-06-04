@@ -83,9 +83,10 @@ class GameEngine():
 			a.moved = False
 		self.ArmyCombat.doCombat(g)
 		#Running engine
-		for e in self.EconEngines:
+		self.fix_variables()
+		for econ in self.EconEngines:
 			#import pdb; pdb.set_trace();
-			e.run_turn(1)
+			econ.run_turn(1)
 			#e.save_GoodsPerCapita('default_graph.png')
 		self.fix_variables()
 		self.TradeEngine.trade(self.EconEngines, [[0.0 for i in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))], [[0.0 for i in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))])

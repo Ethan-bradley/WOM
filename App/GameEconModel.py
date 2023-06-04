@@ -212,9 +212,13 @@ class Country():
 
     #Variables, var_list is the name of array, variable_list is variable name.
     #They should be the same.
-    self.var_list = ['EducationArr2','Government_SavingsArr','TarriffRevenuArr','GovDebtArr','Income_Tax','Corporate_Tax','MoneyPrintingArr','Iron','Wheat','Coal','Oil','Food','ConsumerGoods','Steel','Machinery']
-    self.variable_list = ['Education','Government_Savings','TariffRevenue','GovDebt','IncomeTax','CorporateTax','MoneyPrinting','RawPrices0#','RawPrices1#','RawPrices2#','RawPrices3#','HousePrices0#','HousePrices1#','CapitalPrices0#','CapitalPrices1#']
+    self.var_list = ['EducationArr2','Government_SavingsArr','TarriffRevenuArr','GovDebtArr','Income_Tax','Corporate_Tax','MoneyPrintingArr','Iron','Wheat','Coal','Oil','Food','ConsumerGoods','Steel','Machinery','IronP','WheatP','CoalP','OilP','FoodP','ConsumerGoodsP','SteelP','MachineryP']
+    self.variable_list = ['Education','Government_Savings','TariffRevenue','GovDebt','IncomeTax','CorporateTax','MoneyPrinting','RawPrices0#','RawPrices1#','RawPrices2#','RawPrices3#','HousePrices0#','HousePrices1#','CapitalPrices0#','CapitalPrices1#','RawProduction03$','RawProduction13$','RawProduction23$','RawProduction33$','HouseProduction00$','HouseProduction10$','CapitalProduction01$','CapitalProduction11$']
     self.save_variable_list(self.var_list)
+    #Raw goods variables
+    self.raw_goods = [0 for i in range(0,len(self.RawDemand))]
+    self.raw_good_average = [[] for i in range(0,len(self.RawDemand))]
+    self.RawStockpiles = [0 for i in range(0,len(self.RawDemand))]
     
   def save_variable_list(self, var_list):
     for i in var_list:
@@ -223,6 +227,8 @@ class Country():
     for i in range(0,len(var_list)):
       if variable_list[i][len(variable_list[i])-1] == '#':
         getattr(self,var_list[i]).append(getattr(self, variable_list[i][0:len(variable_list[i])-2])[int(variable_list[i][len(variable_list[i])-2])])
+      elif variable_list[i][len(variable_list[i])-1] == '$':
+        getattr(self,var_list[i]).append(getattr(self, variable_list[i][0:len(variable_list[i])-3])[int(variable_list[i][len(variable_list[i])-3])]*self.goods[int(variable_list[i][len(variable_list[i])-2])])
       else:
         getattr(self,var_list[i]).append(getattr(self, variable_list[i]))
 
@@ -667,7 +673,7 @@ class Country():
     house_goods = 0
     capital_goods = 0
     gov_goods = 0
-    raw_goods = [0 for i in range(0,len(self.RawDemand))]
+    #self.raw_goods = [0 for i in range(0,len(self.RawDemand))]
     for i in range(0,len(self.HouseCapital)):
       if math.isnan(self.HouseCapital[i]):
         self.HouseCapital[i] = 10
@@ -680,25 +686,33 @@ class Country():
     for i in range(0,len(self.RawCapital)):
       if math.isnan(self.RawCapital[i]):
         self.RawCapital[i] = 10
-    for i in range(0, len(self.RawDemand)):
-      print("Raw i",i)
-      print(len(self.RawPrices))
-      self.RawCapital[i] *= 0.9
-      self.RawCapital[i] += capitalChange*(self.RawDemand[i])*(self.money[3]/self.findMoneyTotal())
-      labour = sum(self.pop_matrix[len(self.HouseDemand)+len(self.CapitalDemand) + i][20:self.retirement_age])/self.pop_matrix.sum()
-      raw_goods[i] += self.production_function(self.RawDemand[i], self.RawCapital[i], self.RawScienceAm[i], self.RawResources[i]*100)
-      raw_goods[i] += (self.RawDemand[i]/sum(self.RawDemand))*self.goods[3]
-      self.RawPrices[i] = (self.RawDemand[i]*self.money[3]*self.QuickInvestment)/((self.RawDemand[i]/sum(self.RawDemand))*raw_goods[i])
+    if self.raw_goods[i] == 0:
+      for i in range(0, len(self.RawDemand)):
+        print("Raw i",i)
+        print(len(self.RawPrices))
+        self.RawCapital[i] *= 0.9
+        self.RawCapital[i] += capitalChange*(self.RawDemand[i])*(self.money[3]/self.findMoneyTotal())
+        labour = sum(self.pop_matrix[len(self.HouseDemand)+len(self.CapitalDemand) + i][20:self.retirement_age])/self.pop_matrix.sum()
+        self.raw_goods[i] += self.production_function(self.RawDemand[i], self.RawCapital[i], self.RawScienceAm[i], self.RawResources[i]*100)
+        #self.raw_goods[i] += (self.RawDemand[i]/sum(self.RawDemand))*self.goods[3]
+        self.RawPrices[i] = (self.RawDemand[i]*self.money[3]*self.QuickInvestment)/((self.RawDemand[i]/sum(self.RawDemand))*self.raw_goods[i])
+    #Manage Resource Stockpiles based on average over the last 5 years
+    for i in range(0,len(self.RawDemand)):
+      self.raw_good_average[i].append(self.raw_goods[i])
+      avg = sum(self.raw_good_average[i][-5:])/len(self.raw_good_average[i][-5:])
+      diff = self.raw_goods[i] - avg
+      self.RawStockpiles[i] += diff
+      self.raw_goods[i] -= min(diff, self.RawStockpiles[i])
     for i in range(0,len(self.HouseDemand)):
       self.HouseCapital[i] *= 0.9
       self.HouseCapital[i] += capitalChange*self.HouseDemand[i]*(self.money[2]/self.findMoneyTotal())
       labour = sum(self.pop_matrix[i][20:self.retirement_age])/self.pop_matrix.sum()
-      house_goods += self.production_function(self.HouseDemand[i], self.HouseCapital[i], self.HouseScienceAm[i], labour, raw_goods[1]*raw_goods[3]*0.1*self.HouseProduction[i]*0.01)
+      house_goods += self.production_function(self.HouseDemand[i], self.HouseCapital[i], self.HouseScienceAm[i], labour, self.raw_goods[1]*self.raw_goods[3]*0.1*self.HouseProduction[i]*0.01)
     for j in range(0, len(self.CapitalDemand)):
       self.CapitalCapital[j] *= 0.9
       self.CapitalCapital[j] += capitalChange*(self.CapitalDemand[j])*(self.money[3]*self.InvestmentDirection[4]/self.findMoneyTotal())
       labour = sum(self.pop_matrix[len(self.HouseDemand) + j][20:self.retirement_age])/self.pop_matrix.sum()
-      capital_goods += self.production_function(self.CapitalDemand[j], self.CapitalCapital[j], self.CapitalScienceAm[j], labour, raw_goods[0]*raw_goods[2]*0.1*self.CapitalProduction[i]*0.01)
+      capital_goods += self.production_function(self.CapitalDemand[j], self.CapitalCapital[j], self.CapitalScienceAm[j], labour, self.raw_goods[0]*self.raw_goods[2]*0.1*self.CapitalProduction[i]*0.01)
     GovDemand = [0 for i in range(0, len(self.GovCapital))]
     GovDemand[0] = self.EducationSpend*self.GovGoods
     GovDemand[1] = self.MilitarySpend*self.GovGoods
@@ -707,8 +721,8 @@ class Country():
       self.GovCapital[j] += capitalChange*(GovDemand[j])*(self.money[3]*self.InvestmentDirection[4]/self.findMoneyTotal())
       labour = sum(self.pop_matrix[len(self.HouseDemand) + len(self.CapitalDemand) +len(self.RawDemand) + j][20:self.retirement_age])/self.pop_matrix.sum()
       if j != 0:
-        gov_goods += self.production_function(GovDemand[j], self.GovCapital[j], self.ScienceRate, labour, raw_goods[3]*raw_goods[0]*0.05)
-        self.GovernmentGoods[j] = self.production_function(GovDemand[j], self.GovCapital[j], self.ScienceRate, labour, raw_goods[3]*raw_goods[0]*0.05)
+        gov_goods += self.production_function(GovDemand[j], self.GovCapital[j], self.ScienceRate, labour, self.raw_goods[3]*self.raw_goods[0]*0.05)
+        self.GovernmentGoods[j] = self.production_function(GovDemand[j], self.GovCapital[j], self.ScienceRate, labour, self.raw_goods[3]*self.raw_goods[0]*0.05)
       else:
         gov_goods += self.production_function(GovDemand[j], self.GovCapital[j], self.ScienceRate, labour)
         self.GovernmentGoods[j] = self.production_function(GovDemand[j], self.GovCapital[j], self.ScienceRate, labour)
@@ -722,6 +736,18 @@ class Country():
       self.goods[2] *= ((self.money[5]*self.GovGoods/(self.money[2]+self.money[3]+self.money[5]*self.GovGoods))*gov_goods)/self.goods[2]
     else:
       self.goods[2] = 0.1
+    if self.raw_goods[i] != 0:
+      for i in range(0, len(self.RawDemand)):
+        print("Raw i",i)
+        print(len(self.RawPrices))
+        self.RawCapital[i] *= 0.9
+        self.RawCapital[i] += capitalChange*(self.RawDemand[i])*(self.money[3]/self.findMoneyTotal())
+        labour = sum(self.pop_matrix[len(self.HouseDemand)+len(self.CapitalDemand) + i][20:self.retirement_age])/self.pop_matrix.sum()
+        self.RawPrices[i] = (self.RawDemand[i]*self.money[3]*self.QuickInvestment)/((self.RawDemand[i]/sum(self.RawDemand))*self.raw_goods[i])
+        self.raw_goods[i] = self.production_function(self.RawDemand[i], self.RawCapital[i], self.RawScienceAm[i], self.RawResources[i]*100)
+        #self.raw_goods[i] += (self.RawDemand[i]/sum(self.RawDemand))*self.goods[3]
+        
+    #self.raw_goods = [0 for i in range(0,len(self.RawDemand))]
     
   def production_function(self, percentage, capital, scienceRate, employment=1, extra=1):
     #Total = (-self.Employable*percentage*self.ScienceRate*extra*np.exp((-4/(self.Employable*percentage*self.ScienceRate*extra))*capital)+self.ScienceRate*self.Employable*percentage*extra)*(0.9+self.Infrastructure)
