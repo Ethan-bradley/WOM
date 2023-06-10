@@ -1,7 +1,9 @@
 from .models import Game, Player, IndTariff, Tariff, Army, Policy, PolicyGroup, Hexes, PlayerProduct, Product, Notification
 from .forms import NewGameForm, IndTariffForm, JoinGameForm, AddIndTariffForm, AddTariffForm, NextTurn, ResetTurn
-from .GameEconModel import Country
-from .TradeModel import Trade
+#from .GameEconModel import Country
+#from .TradeModel import Trade
+from .EconHelper import CreationManager, Manager, trade_diagram
+from .EconHelper import Government
 from django.core.files import File
 from .HexList import HexList
 from .ArmyCombat import ArmyCombat
@@ -15,30 +17,73 @@ class GameEngine():
 	def __init__(self, num_players, nameListInput):
 		self.nameList = nameListInput
 		self.EconEngines = []
+		CountryList = ['Neutral','Spain','UK','France','Germany','Italy']
+		self.CountryNameList = CountryList
+		self.nameList = CountryList
+		good_names = ['Deposits','Loans','UnskilledLabour','Engineer','Miner','Farmer','Metallurgist','Teacher','Doctor','Physicist','Education','Food','Clothes','Services','Housing','Construction','Healthcare','Military','MedicalEquipment','Steel','Crops','Iron','Coal','Oil','Transport','Machinery']+CountryList+['Money']
+		good_types = ['Consumer','Loans','Labour',        'Labour',  'Labour', 'Labour',      'Labour','Labour','Labour','Labour',     'Consumer','Consumer','Consumer','Consumer','Consumer','Capital','Consumer','Other',    'Capital','Capital','Raw','Raw','Raw','Raw',           'Transport','Capital']+['ForeignCurrency' for i in range(len(CountryList))]+['Money']
+		industry_types = ['Deposits','Loans','Labour',    'Labour',       'Labour', 'Labour',  'Labour','Labour','Labour','Labour', 'Education','Food',    'Food','Services','Construction','Construction','Health','Military','HealthEquipment','Steel','Agriculture','Iron','Coal','Oil','Transport','Machinery']+['ForeignCurrency' for i in range(len(CountryList))]+['Money']
+		transportable_indexes = [11,12,17,18,19,20,21,22,23,25,len(good_names)-1]
+		num_households = 30 #30
+		num_corp_per_industry = [2 for i in range(len(good_names))] #10
+
+		industry_types2 = ['Deposits','Loans','Labour',    'Labour',       'Labour', 'Labour',  'Labour','Labour','Labour','Labour', 'Education','Food',    'Food','Services','Construction','Construction','Health','Military','HealthEquipment','Steel','Agriculture','Iron','Coal','Oil','Transport','Machinery']+['ForeignCurrency' for i in range(len(CountryList))]+['Chemistry','Physics','Biology','Money']
+		industry_value_dict = {
+		    'Agriculture':[['Machinery',0.4], ['Farmer',0.2], ['Oil', 0.2], ['Doctor', 0.0]],
+		    'Food':[['Construction', 0.2],['Machinery',0.3], ['Crops',0.3], ['UnskilledLabour',0.2], ['Engineer', 0.0]],
+		    'Manufacturing':[['Machinery',0.35], ['Construction',0.1], ['Steel',0.15],['UnskilledLabour',0.45], ['Engineer', 0.0]],
+		    'Military':[['Machinery',0.15], ['Construction',0.1], ['Steel',0.1], ['Oil',0.1], ['Metallurgist',0.2], ['Engineer',0.35]],
+		    'Steel':[['Machinery',0.4], ['Iron',0.1],['Coal',0.1],['Metallurgist',0.45]],
+		    'Services': [['Machinery',0.5], ['Oil',0.1], ['UnskilledLabour',0.4]],
+		    'Health':[['MedicalEquipment',0.3], ['Construction',0.1], ['UnskilledLabour',0.1], ['Doctor',0.5]],
+		    'HealthEquipment':[['Machinery',0.3],['Engineer',0.6]],
+		    'Mining':[['Machinery',0.6], ['Miner',0.2],['Engineer',0.0]],
+		    'Oil':[['Machinery',0.6], ['Miner',0.2],['Engineer',0.0]],
+		    'Iron':[['Machinery',0.4], ['Oil', 0.2], ['Miner',0.2],['Engineer',0.0]],
+		    'Coal':[['Machinery',0.4], ['Oil', 0.2], ['Miner',0.2],['Engineer',0.0]],
+		    'Transport':[['Construction',0.33],['Oil',0.3], ['UnskilledLabour',0.37],['Engineer',0.0]],
+		    'Construction':[['Machinery',0.3], ['Oil', 0.1], ['UnskilledLabour',0.2], ['Engineer',0.4]],
+		    'Machinery':[['Machinery',0.4], ['Steel',0.1], ['Metallurgist',0.2], ['Engineer',0.3]],
+		    'Deposits':[['Loans',0.4],['Construction',0.2]] + [[i,(1/len(CountryList))*0.2] for i in CountryList] + [['Engineer',0.2]],
+		    'Loans':[['Loans',0.5], ['Deposits',0.5]],
+		    'Education':[['Construction',0.3], ['Teacher',0.7]],
+		    'Chemistry':[['Machinery',0.3], ['Engineer',0.7]],
+		    'Biology':[['Machinery',0.3], ['Doctor',0.7]],
+		    'Physics':[['Machinery',0.3], ['Physicist',0.7]],
+		}
+		researcher_indexes, industry_dict = self.create_industry_dict(good_names, good_types, industry_types2,industry_value_dict)
+		education_array = [[2,0],[3,7],[4,2],[5,2],[6,4],[7,7],[8,10],[8,10]]
+		final_goods = ['Education','Food','Clothes','Services','Housing','Construction','Healthcare','Military','Transport','Capital']
+		hex_list = HexList().hexList
+		M = Manager(hex_list, good_names, good_types, industry_types, num_households, num_corp_per_industry, industry_dict, CountryList, transportable_indexes, education_array, final_goods, researcher_indexes)
+		M.run_turn(8)
+		self.EconEngines = M.CountryList
 		temp = 0
 		if num_players > 7:
-			for i in range(0,num_players):
-				self.EconEngines.append(Country())
+			#for i in range(0,num_players):
+			#self.EconEngines.append(Country())
 			temp = num_players - 7
 			num_players2 = 7
-			for i in range(0,num_players2):
-				self.EconEngines[i].run_turn(13)
+			#for i in range(0,num_players2):
+			#self.EconEngines[i].run_turn(13)
 		else:
 			for i in range(0,num_players):
-				self.EconEngines.append(Country())
-				self.EconEngines[i].run_turn(13)
-				self.EconEngines[i].Military = 50000
-		self.TradeEngine = Trade(self.EconEngines,self.nameList)
+				pass
+				#self.EconEngines.append(Country())
+				#self.EconEngines[i].run_turn(13)
+				#self.EconEngines[i].Military = 50000
+		self.TradeEngine = M
+		trade_diagram(CountryList, self.TradeEngine.trade_balance, "trade")
 		self.ArmyCombat = ArmyCombat()
 		self.var_list = ['Welfare','Education','Military','Infrastructure','Science']
 		self.variable_list = ['Welfare','Education','Military','InfrastructureInvest','ScienceInvest']
 		self.save_variable_list(self.var_list, num_players)
 		countries = self.nameList
-		self.TarriffsArr = {i:{k:[0 for i in range(0,20)] for k in countries} for i in countries}
+		self.TarriffsArr = {i:{k:[0.1 for i in range(0,8)] for k in countries} for i in countries}
 		#import pdb; pdb.set_trace()
-		self.SanctionsArr = {i:{k:[0 for i in range(0,20)] for k in countries} for i in countries}
-		self.ForeignAid = {i:{k:[0 for i in range(0,20)] for k in countries} for i in countries}
-		self.MilitaryAid = {i:{k:[0 for i in range(0,20)] for k in countries} for i in countries}
+		self.SanctionsArr = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
+		self.ForeignAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
+		self.MilitaryAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
 	def run_more_countries(self, num_players):
 		if num_players > 5:
 			for i in range(7,num_players):
@@ -56,7 +101,7 @@ class GameEngine():
 			#self.apply_hex_number(g, p, country)
 			self.start_hex_number(g, p, country)
 
-	def run_engine(self, g, graphs=True):
+	def run_engine(self, g, graphs=True, years_run=1):
 		#Resetting model variables
 		all_players = Player.objects.filter(game=g)
 		if graphs:
@@ -83,56 +128,22 @@ class GameEngine():
 			a.moved = False
 		self.ArmyCombat.doCombat(g)
 		#Running engine
-		self.fix_variables()
-		for econ in self.EconEngines:
-			#import pdb; pdb.set_trace();
-			econ.run_turn(1)
+		#self.fix_variables()
+		self.TradeEngine.run_turn(years_run)
+		
 			#e.save_GoodsPerCapita('default_graph.png')
-		self.fix_variables()
-		self.TradeEngine.trade(self.EconEngines, [[0.0 for i in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))], [[0.0 for i in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))])
+		#self.fix_variables()
+		#self.TradeEngine.trade(self.EconEngines, [[0.0 for i in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))], [[0.0 for i in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))])
 		print('running engine')
-		for p in all_players:
-			index = self.nameList.index(p.country.name)
-			country = self.get_country(index)
-			self.apply_hex_number(g, p, country)
+		#for p in all_players:
+		#index = self.nameList.index(p.country.name)
+		#country = self.get_country(index)
+		#self.apply_hex_number(g, p, country)
 		if graphs:
-			pass
+			trade_diagram(self.CountryNameList, self.TradeEngine.trade_balance, "trade")
 			#self.create_graphs(g, all_players)
 			#self.create_compare_graph(self.EconEngines, self.nameList, 17, ['GoodsPerCapita','InflationTracker','ResentmentArr','EmploymentRate','ConsumptionArr','InterestRate','GoodsBalance','ScienceArr'],'',g.name, g)
 		return [self.EconEngines, self.TradeEngine]
-
-	def fix_variables(self):
-		for e in self.EconEngines:
-			for i in range(0,len(e.InflationTracker)):
-				if e.InflationTracker[i] > 150: 
-					e.InflationTracker[i] = 150
-				elif e.InflationTracker[i] < -50:
-					e.InflationTracker[i] = -50
-			for i in range(0, len(e.ResentmentArr)):
-				if e.ResentmentArr[i] > 0.15:
-					e.ResentmentArr[i] = 0.15
-			if e.Resentment > 0.15:
-				e.Resentment = 0.15
-			if e.Infrastructure > 100:
-				e.Infrastructure = 100
-			money_average = sum(e.money[0:5])/5
-			extra = 0
-			for i in range(0, len(e.goods)):
-				if e.money[i] < 0 or math.isnan(e.money[i]):
-					e.money[i] = 500
-				if e.money[i] > money_average*3:
-					extra = (e.money[i] - money_average)/5
-					e.money[i] = e.money[i] - extra*5
-				if e.goods[i] < 0 or math.isnan(e.goods[i]):
-					e.goods[i] = 1000
-			for i in range(0, 5):
-				e.money[i] += extra
-			if math.isnan(e.interest_rate):
-				e.interest_rate = 0.1
-			if math.isnan(e.real_interest_rate):
-				e.real_interest_rate = 0.12
-			if math.isnan(e.ConsumerPrice):
-				e.ConsumerPrice = 100
 
 
 	def game_combat(self, g):
@@ -242,68 +253,40 @@ class GameEngine():
 		for p in all_players:
 			index = self.nameList.index(p.country.name)
 			country = self.get_country(index)
-			self.calculate_differences(g, p, country)
-			self.get_hex_numbers(g, p, country)
-			for i in range(0,5):
-				if math.isnan(country.money[i]):
-					country.money[i] = 500
-			prev_revenue = country.IncomeTax*country.money[0] + country.CorporateTax*country.money[4]
-			if math.isnan(country.money[5]):
-				country.money[5] = prev_revenue
-			if math.isnan(country.money[8]):
-				country.money[8] = country.money[2] + country.money[3] + country.money[5]
-			
-			diff = country.money[5] - prev_revenue
+
+			#self.calculate_differences(g, p, country)
+			#self.get_hex_numbers(g, p, country)
 
 			country.IncomeTax = p.IncomeTax
 			country.CorporateTax = p.CorporateTax
 			#country.GovGoods = p.Education + p.Military
-			revenue = p.IncomeTax*country.money[0] + p.CorporateTax*country.money[4] + diff
-			country.MoneyPrinting = p.MoneyPrinting
+			#revenue = p.IncomeTax*country.money[0] + p.CorporateTax*country.money[4]
+			
+			country.interest_rate = p.Interest_Rate
+			country.deposit_rate = p.Interest_Rate - 0.03
+			
 			#import pdb; pdb.set_trace();
-			welfare = ((p.Welfare + p.AdditionalWelfare)*country.money[8])/revenue
-			gov_invest = ((p.InfrastructureInvest + p.ScienceInvest)*country.money[8])/revenue
-			gov_goods = ((p.Education + p.Military)*country.money[8])/revenue
-			if welfare + gov_invest + gov_goods > 1:
-				country.BondWithdrawl = (welfare + gov_invest + gov_goods - 1)*country.money[5]
-				if country.BondWithdrawl > country.money[1]*0.5:
-					#Country is Bankrupt if this occurs.
-					country.BondWithdrawl = country.money[1]*0.5
-				welfare = ((p.Welfare + p.AdditionalWelfare)*country.money[8])/(country.money[5]+country.BondWithdrawl)
-				gov_invest = ((p.InfrastructureInvest + p.ScienceInvest)*country.money[8])/(country.money[5]+country.BondWithdrawl)
-				gov_goods = ((p.Education + p.Military)*country.money[8])/(country.money[5]+country.BondWithdrawl)
-
-			if ((p.Education + p.Military) != 0):
-				country.EducationSpend = p.Education/(p.Education + p.Military)
-				country.MilitarySpend = p.Military/(p.Education + p.Military)
-			else:
-				country.EducationSpend = 0
-
-			country.GovGoods = gov_goods
-			#country.BondWithdrawl = p.Bonds
-			#country.Bonds = p.Bonds
+			welfare = p.Welfare + p.AdditionalWelfare
+			country.spending[country.EducationIndex] = p.Education
+			country.spending[country.MilitaryIndex] = p.Military
 			#country.GovWelfare = p.Welfare + p.AdditionalWelfare
 			country.GovWelfare = welfare
 			#Investment
-			total_gov_money = revenue + country.BondWithdrawl
-			total_investor_money = country.money[4]*country.InvestmentRate
+			#total_gov_money = revenue + country.BondWithdrawl
+			#total_investor_money = country.money[4]*country.InvestmentRate
 
-			country.GovernmentInvest = gov_invest #p.InfrastructureInvest + p.ScienceInvest
-			total_money = revenue*country.GovernmentInvest + total_investor_money
-			country.InfrastructureInvest = ((total_gov_money*((p.InfrastructureInvest*country.money[8])/revenue))/total_money) + ((total_investor_money*0.1)/total_money)
-			country.ScienceInvest = ((total_gov_money*((p.ScienceInvest*country.money[8])/revenue))/total_money) + ((total_investor_money*0.05)/total_money)
+			#country.GovernmentInvest = gov_invest #p.InfrastructureInvest + p.ScienceInvest
+			#total_money = revenue*country.GovernmentInvest + total_investor_money
+			country.spending[country.InfrastructureIndex] = p.InfrastructureInvest
+			country.ResearchSpend = p.ScienceInvest
 			#country.QuickInvestment = p.CapitalInvestment
 			#import pdb; pdb.set_trace();
-			total_money = ((total_gov_money*((p.ScienceInvest*country.money[8])/revenue))) + ((total_investor_money*0.05))
-			#Money one side invests*share + money other side / total
-			country.TheoreticalInvest = ((total_gov_money*p.TheoreticalInvest*((p.ScienceInvest*country.money[8])/revenue)) + ((total_investor_money*0.05*0.1)))/total_money
-			country.PracticalInvest = ((total_gov_money*p.PracticalInvest*((p.ScienceInvest*country.money[8])/revenue)) + ((total_investor_money*0.05*0.3)))/total_money
-			country.AppliedInvest = ((total_gov_money*p.AppliedInvest*((p.ScienceInvest*country.money[8])/revenue)) + ((total_investor_money*0.05*0.6)))/total_money
 
 			self.TradeEngine.investment_restrictions[index] = p.investment_restriction
-			#Rebellions
-			if country.Resentment > 0.06:
-				self.rebel(g, p, country.Resentment)
+
+			#Rebellions!!!! EDIT THIS
+			#if country.Resentment > 0.06:
+			#self.rebel(g, p, country.Resentment)
 			#Tarriffs
 			#import pdb; pdb.set_trace()
 			#try:
@@ -314,7 +297,7 @@ class GameEngine():
 
 				count = 0
 				for t in k:
-					count = self.TradeEngine.CountryName.index(t.key.country.name)
+					count = self.TradeEngine.CountryNameList.index(t.key.country.name)
 					#Save data to array
 					self.TarriffsArr[t.key.country.name][p.country.name].append(t.tariffAm)
 					self.SanctionsArr[t.key.country.name][p.country.name].append(t.sanctionAm)
@@ -326,40 +309,43 @@ class GameEngine():
 					transfer_array[index][count] = t.moneySend
 					military_transfer[index][count] = t.militarySend
 					#import pdb; pdb.set_trace()
-					self.TradeEngine.foreign_investment[index][count] = self.TradeEngine.foreign_investment[count][index]*t.nationalization
+					#ADD IN NATIONALIZATION
+					#self.TradeEngine.foreign_investment[index][count] = self.TradeEngine.foreign_investment[count][index]*t.nationalization
 					count += 1
 			#Append variables
 			#import pdb; pdb.set_trace()
 			self.append_variable_list(self.var_list, self.variable_list, index, p)
-			#Product subsidies/restrictions
+			#Product subsidies/restrictions FIX THIS
 			productP = PlayerProduct.objects.filter(game=g, curr_player=all_players[index])
 			if len(productP) != 0:
 				productP = productP[0]
 				products = Product.objects.filter(controller=productP)
 				country_index = self.nameList.index(p.country.name)
 				for product in products:
-					if product.name in country.HouseProducts:
-						index = country.HouseProducts.index(product.name)
-						self.TradeEngine.restrictions[country_index]['HouseProduction'][index] = product.exportRestriction
-						country.HouseScience[index] = product.subsidy
-					if product.name in country.CapitalGoods:
-						index = country.CapitalGoods.index(product.name)
-						self.TradeEngine.restrictions[country_index]['CapitalProduction'][index] = product.exportRestriction
-						country.CapitalScience[index] = product.subsidy
-					if product.name in country.RawGoods:
-						index = country.RawGoods.index(product.name)
-						self.TradeEngine.restrictions[country_index]['RawProduction'][index] = product.exportRestriction
-						country.RawScience[index] = product.subsidy
+					index = self.TradeEngine.good_names.index(product.name)
+					self.TradeEngine.restrictions[country_index][index] = product.exportRestriction
+					country.subsidies[index] = product.subsidy
 			#except:
 			#	print("Index out of range error!")
-
-		self.TradeEngine.trade_money(self.EconEngines, transfer_array)
-		self.TradeEngine.trade_military_goods(self.EconEngines, military_transfer)
+			
+		#ADD these functions:
+		self.TradeEngine.trade_money(transfer_array)
+		self.TradeEngine.trade_military_goods(military_transfer)
+		hex_list = Hexes.objects.filter(game=g, water=False)
+		for h in range(0, len(hex_list)):
+			market = self.TradeEngine.market_list[self.TradeEngine.location_names.index(hex_list[h].name)]
+			hex_list[h].capital = int(market.output[-1])
+			hex_list[h].population = int(market.population[-1])
+			resentment = round(market.Resentment[-1],3)
+			hex_list[h].resentment = resentment
+			if resentment > 0.17:
+				self.rebel(g, hex_list[h], resentment)
+			hex_list[h].save()
 
 	def save_variable_list(self, var_list, player_num):
 		for i in var_list:
 			#change to 17
-			setattr(self,i,[[0.02 for i in range(0,20)] for i in range(player_num)])
+			setattr(self,i,[[0.02 for i in range(0,5)] for i in range(player_num)])
 	def append_variable_list(self, var_list, variable_list, index, player):
 		for i in range(0,len(var_list)):
 			getattr(self,var_list[i])[index].append(getattr(player, variable_list[i]))
@@ -571,48 +557,41 @@ class GameEngine():
 			string += ": "+str(currencyRates[i])+"\n"
 		return string
 	#Causes a province to rebel.
-	def rebel(self, g, p, res):
-		hex_list = Hexes.objects.filter(game=g, controller=p, water=False)
-		if p.name != "Neutral" and (len(hex_list) > 0):
+	def rebel(self, g, hex2, res):
+		p = hex2.controller
+		if p.name != "Neutral":
 			neutral_player = Player.objects.filter(game=g,name="Neutral")[0]
-			chosen_hex = hex_list[0]
-			if chosen_hex.center == True and len(hex_list) > 1:
-				chosen_hex = hex_list[1]
-			self.switch_hex(hex_list[0], neutral_player, g)
-			Army.objects.create(game=g, size=hex_list[0].population*res*100,controller=neutral_player, naval=False, location=hex_list[0], name=hex_list[0].name+" Rebel Army")
-			message2 = "In "+p.name+"'s territory a rebel army of size "+str(round(hex_list[0].population*res*100,0))+" rose up in "+hex_list[0].name
-			turn = g.GameEngine.get_country_by_name("UK").time - 17
+			self.switch_hex(hex2, neutral_player, g)
+			Army.objects.create(game=g, size=hex2.population*res*100,controller=neutral_player, naval=False, location=hex2, name=hex2.name+" Rebel Army")
+			message2 = "In "+p.name+"'s territory a rebel army of size "+str(round(hex2.population*res*100,0))+" rose up in "+hex2.name
+			turn = g.GameEngine.get_country_by_name("UK").time - 6
 			Notification.objects.create(game=g, message=message2,year=turn)
 
 	#Switches control of a hex between two players (doesn't work yet)
 	def switch_hex(self, h, player_to, g):
 		loser = h.controller
 		#import pdb; pdb.set_trace()
-		#g.GameEngine.modify_country_by_name(loser.country.name, 'Population', loser.get_country().add_population(loser.get_country().pop_matrix,-h.population*0.8))
-		loser_country = loser.get_country()
-		loser.get_country().add_population(loser.get_country().pop_matrix,-h.population*0.8)
-		subtract = ((h.population*0.8)/loser_country.pop_matrix.sum())
-		loser_country.money[0] -= loser_country.money[0]*subtract
-		loser_country.money[1] -= loser_country.money[1]*subtract
-		loser_country.money[2] -= loser_country.money[2]*subtract
-		loser_country.money[3] -= loser_country.money[3]*subtract
-		loser_country.money[4] -= loser_country.money[4]*subtract
-		loser_country.money[5] -= loser_country.money[5]*subtract
+		to_country = player_to.country.name
+		self.TradeEngine.switch_hex(h.name, to_country)
+		
 		g.save()
-		g.GameEngine.modify_country_by_name(loser.country.name, 'capital', loser.get_country().capital - h.capital*0.9)
-		g.save()
-		#loser.get_country().Population -= 
-		#loser.get_country().capital -= 
 		h.controller = player_to
 		h.color = player_to.country.color
-		#g.GameEngine.modify_country_by_name(player_to.country.name, 'Population', player_to.get_country().add_population(loser.get_country().pop_matrix, h.population*0.8))
-		player_to.get_country().add_population(loser.get_country().pop_matrix, h.population*0.75)
-		g.save()
-		g.GameEngine.modify_country_by_name(player_to.country.name, 'capital', player_to.get_country().capital + h.capital*0.8)
-		#player_to.get_country().Population += h.population*0.75
-		#player_to.get_country().capital += h.capital*0.75
-		g.save()
 
 		h.save()
 		player_to.save()
 		loser.save()
+
+	def create_industry_dict(self, good_names, goods_type, industry_types, industry_value_dict):
+	  industry_dict = {}
+	  researcher_indexes = {}
+	  #labour_types = goods_type.count('Labour')
+	  for i in range(0, len(industry_types) -1):
+	    if (i >= len(goods_type)) or (goods_type[i] != 'Labour' and goods_type[i] != 'ForeignCurrency'):
+	      industry_dict[industry_types[i]] = [0 for i in range(0,len(good_names))]
+	      for j in range(len(industry_value_dict[industry_types[i]])):
+	        index = good_names.index(industry_value_dict[industry_types[i]][j][0])
+	        industry_dict[industry_types[i]][index] = industry_value_dict[industry_types[i]][j][1]
+	      researcher_indexes[industry_types[i]] = good_names.index(industry_value_dict[industry_types[i]][-1][0])
+
+	  return researcher_indexes, industry_dict

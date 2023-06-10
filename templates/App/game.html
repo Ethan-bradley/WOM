@@ -68,13 +68,8 @@
                 </tr>
                 <tr>
                   <td data-toggle="tooltip" title="- Science spending (ScienceInvest) improves the efficiency of your country's production processes, by paying scientists. The way it works is that there are 3 kinds of science: Theoretical, Practical and Applied. Applied is what actually determines the efficiency of your production processes; and furthermore you can actually adjust how much of your Applied science should go into which production processes. Meanwhile, you need Practical to boost your Applied, and Theoretical to boost your Practical. You can also determine how much of your Science spending should go into which of the 3 categories">{{ govForm.ScienceInvest|as_crispy_field }} <td>
-                    <td data-toggle="tooltip" title="- Quantitaive Easing (Money Printing) does not give you revenues. What it does is add money to the economy by buying up government debt, held by private investors. Higher Quantitaive Easing leads to more inflation. You can even do negative amounts. Changes to Quantitaive Easing take effect in 2 years, as opposed to the usual 1 year that normal policies take to implement">{{ govForm.MoneyPrinting|as_crispy_field }} <td>
+                    <td data-toggle="tooltip" title="- Interest Rates control the interest paid by corporations and governments for loans. A lower interest rate will result in more borrowing and investment by corporations expanding the economy while a higher rate results in less, contracting the economy. The deposit rate is always 3% below the interest rate set here.">{{ govForm.Interest_Rate|as_crispy_field }} <td>
                       <td data-toggle="tooltip" title="Investment Restrictions are effectively a tariff on foreign investments from the population of other countries. You don't (currently) get revenues from that, though">{{ govForm.investment_restriction|as_crispy_field }} <td>
-                </tr>
-                <tr>
-                  <td>{{ govForm.TheoreticalInvest|as_crispy_field }} <td>
-                  <td>{{ govForm.PracticalInvest|as_crispy_field }} <td>
-                  <td>{{ govForm.AppliedInvest|as_crispy_field }} <td>
                 </tr>
               </tbody>
               </table>

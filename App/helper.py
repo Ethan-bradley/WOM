@@ -76,7 +76,7 @@ def add_players(temp, type):
 	    formt.name = curr_player.name
 	    formt.save()
 	    #Adds an IndTariff object to each player's tariff object.
-	    productList = ['Food','Consumer Goods','Steel','Machinery','Iron','Wheat','Coal','Oil']
+	    productList = ['Food','Services','Steel','Military','MedicalEquipment','Machinery','Iron','Crops','Coal','Oil']
 	    for product in productList:
 	        iForm = AddProductForm()
 	        itf = iForm.save(commit=False)
@@ -151,7 +151,7 @@ def add_neutral(temp):
     formt.name = curr_player.name
     formt.save()
     #Adds an IndTariff object to each player's tariff object.
-    productList = ['Food','Consumer Goods','Steel','Machinery','Iron','Wheat','Coal','Oil']
+    productList = ['Food','Services','Steel','Military','MedicalEquipment','Machinery','Iron','Crops','Coal','Oil']
     for product in productList:
         iForm = AddProductForm()
         itf = iForm.save(commit=False)

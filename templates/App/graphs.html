@@ -7,7 +7,7 @@
       <h2 class="account-heading">Budget Graphs <span style="float:right;" data-toggle="tooltip" title="Here you can see each country's budget items (taxes, expenditures), as well as the prices of individual goods over time; each of those graphs compares all countries. You can select which item to look at, via the selector that you can see at the bottom of this graph">ℹ️ </span></h2>
 
       <legend class="border-bottom mb-4">{{ country }}</legend>
-           <canvas id={{ graphs.16 }}></canvas>
+           <canvas id={{ graphs.18 }}></canvas>
            <form method="POST">
             {% csrf_token %}
             <fieldset class="form-group">
@@ -34,8 +34,10 @@
         <div id="container" style="width: 75%;">
       <canvas id="gdp-chart"></canvas>
         </div>
+
         <div id="container" style="width: 75%;">
       <canvas id="growth-chart"></canvas>
+        </div>
 
       <span style="float:right;" data-toggle="tooltip" title="Job Market Graphs- Here you can see the wages of different industries in your country, as well as the total number of jobs per industry in your country">ℹ️ </span>
       <br>
@@ -43,6 +45,7 @@
 
            {% include wageGraph %}
            {% include jobGraph %}
+           {% include pricesGraph %}
 
     </div>
 
@@ -130,7 +133,7 @@ var goods_graph = {
 const data3 = {
   labels: {{ labels|safe }},
   datasets: [{
-    label: 'Nominal GDP',
+    label: 'Real GDP',
     data: {{ GDP|safe }},
     fill: false,
     borderColor: 'rgb(75, 192, 192)',

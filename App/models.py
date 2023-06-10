@@ -57,22 +57,22 @@ class Player(models.Model):
 	projection_unloaded = models.BooleanField(default=True)
 	#Country = PickledObjectField()
 	#Government Variables:
-	IncomeTax = models.FloatField(default=0.2)
-	CorporateTax = models.FloatField(default=0.1)
-	Welfare = models.FloatField(default=0.1)
+	IncomeTax = models.FloatField(default=0.05)
+	CorporateTax = models.FloatField(default=0.0)
+	Welfare = models.FloatField(default=0.0)
 	AdditionalWelfare= models.FloatField(default=0)
-	Education = models.FloatField(default=0.05)
+	Education = models.FloatField(default=0.01)
 	Military = models.FloatField(default=0.01)
 	Bonds = models.FloatField(default=0)
-	MoneyPrinting = models.IntegerField(default=200)
+	Interest_Rate = models.FloatField(default=0.1)
 
 	#Science Investment
-	InfrastructureInvest = models.FloatField(default=0.017)
+	InfrastructureInvest = models.FloatField(default=0.0)
 	#CapitalInvestment = models.FloatField(default=0.0)
 	ScienceInvest = models.FloatField(default=0.0)
-	TheoreticalInvest = models.FloatField(default=0.1)
-	PracticalInvest = models.FloatField(default=0.3)
-	AppliedInvest = models.FloatField(default=0.6)
+	TheoreticalInvest = models.FloatField(default=0.0)
+	PracticalInvest = models.FloatField(default=0.0)
+	AppliedInvest = models.FloatField(default=0.0)
 
 	#Restrictions
 	investment_restriction = models.FloatField(default=0.0)
@@ -149,6 +149,7 @@ class Hexes(models.Model):
 	yLocation = models.IntegerField(default=0)
 	population = models.IntegerField()
 	capital = models.IntegerField(default=0)
+	resentment = models.DecimalField(default=0.0,max_digits=70, decimal_places=50)
 	oil = models.IntegerField(default=0)
 	iron = models.IntegerField(default=0)
 	coal = models.IntegerField(default=0)
@@ -244,13 +245,13 @@ class GraphInterface(models.Model):
 	SCIENCE = "Science"
 	INFRASTRUCTURE = "Infrastructure"
 	MILITARY = "Military"
-	MONEY = "MoneyPrintingArr"
+	MONEY = "InterestRate"
 	IRON = "Iron"
-	WHEAT = "Wheat"
+	CROPS = "Crops"
 	COAL = 'Coal'
 	OIL = 'Oil'
 	FOOD = 'Food'
-	CONSUMER = 'ConsumerGoods'
+	CONSUMER = 'Services'
 	STEEL = 'Steel'
 	MACHINERY = 'Machinery'
 	IRONPROD = "IronP"
@@ -269,13 +270,13 @@ class GraphInterface(models.Model):
 	(SCIENCE, 'Science'),
 	(INFRASTRUCTURE, 'Infrastructure Spending'),
 	(MILITARY, 'Military Spending'),
-	(MONEY, 'Money Printing'),
+	(MONEY, 'Interest Rates'),
 	(IRON,'Iron Prices'),
-	(WHEAT, 'Wheat Prices'),
+	(CROPS, 'Crop Prices'),
 	(COAL, 'Coal Prices'),
 	(OIL, 'Oil Prices'),
 	(FOOD, 'Food Prices'),
-	(CONSUMER, 'Consumer Goods Prices'),
+	(CONSUMER, 'Services Prices'),
 	(STEEL, 'Steel Prices'),
 	(MACHINERY, 'Machinery Prices'),
 	(IRONPROD,'Iron Production'),

@@ -154,7 +154,7 @@ class ArmyForm(ModelForm):
 class GovernmentSpendingForm(ModelForm):
     class Meta:
         model = Player
-        fields = ['IncomeTax','CorporateTax','Welfare','Education','Military','InfrastructureInvest','MoneyPrinting','ScienceInvest','TheoreticalInvest','PracticalInvest','AppliedInvest','investment_restriction']
+        fields = ['IncomeTax','CorporateTax','Welfare','Education','Military','InfrastructureInvest','Interest_Rate','ScienceInvest','investment_restriction']
         dict2 = {}
         for field in fields:
             dict2[field] = TextInput(attrs={'type':'number','step': '0.01'})
@@ -177,16 +177,13 @@ class GovernmentSpendingForm(ModelForm):
         ii = self.cleaned_data.get('InfrastructureInvest')
         si = self.cleaned_data.get('ScienceInvest')
         #total = w + e + m + ii + si + aw
-        ti = self.cleaned_data.get('TheoreticalInvest')
-        pi = self.cleaned_data.get('PracticalInvest')
-        ai = self.cleaned_data.get('AppliedInvest')
-        mp = self.cleaned_data.get('MoneyPrinting')
+        mp = self.cleaned_data.get('Interest_Rate')
 
-        if w + e + m + ii + si >= 1:
+        """if w + e + m + ii + si >= 1:
             self._errors['IncomeTax'] = self.error_class(['You cannot have negative numbers in spending plan.'])
             raise ValidationError('Education, Welfare, Science, Infrastructure, and Military values must in total not be more than 1.')
 
-        if it <= 0 or ct <= 0 or w < 0 or e < 0 or m < 0 or ii < 0 or si < 0:
+        if it < 0 or ct < 0 or w < 0 or e < 0 or m < 0 or ii < 0 or si < 0:
             self._errors['IncomeTax'] = self.error_class(['You cannot have negative numbers in spending plan.'])
             raise ValidationError('You cannot have negative numbers in spending plan.')
 
@@ -194,13 +191,23 @@ class GovernmentSpendingForm(ModelForm):
             self._errors['IncomeTax'] = self.error_class(['You cannot have income or corporate taxes by more than 90%.'])
             raise ValidationError('You cannot have income or corporate taxes by more than 90%.')
 
-        if ti + pi + ai != 1:
-            self._errors['IncomeTax'] = self.error_class(['Theoretical, Practical, and Applied Invest must equal 1.'])
-            raise ValidationError('Theoretical, Practical, and Applied Invest must equal 1.')
-        if mp > 10000 or mp < -200:
-            self._errors['IncomeTax'] = self.error_class(['Money Printing must be less than 10,000 or more than -200.'])
-            raise ValidationError('Money Printing must be less than 10,000 or more than -200.')
+        if mp > 10000 or mp < 0.0:
+            self._errors['IncomeTax'] = self.error_class(['Interest Rates must be less than 10,000 or more than 0.0.'])
+            raise ValidationError('Interest Rates must be less than 10,000 or more than 0.0.')"""
 
+        if w + e + m + ii + si >= 1:
+            self.add_error(None, 'Education, Welfare, Science, Infrastructure, and Military values must not total more than 1.')
+
+        if it < 0 or ct < 0 or w < 0 or e < 0 or m < 0 or ii < 0 or si < 0:
+            self.add_error(None, 'You cannot have negative numbers in the spending plan.')
+
+        if it >= 0.9 or ct >= 0.9:
+            self.add_error(None, 'You cannot have income or corporate taxes greater than 90%.')
+        
+        if mp > 10000 or mp < 0.0:
+            self.add_error(None, 'Interest rates must be less than 10,000 or greater than 0.0.')
+
+        #self._errors['IncomeTax'] = self.error_class(['No errors'])
         return self.cleaned_data
 
 
