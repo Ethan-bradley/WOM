@@ -6,6 +6,7 @@ from .EconHelper import CreationManager, Manager, trade_diagram
 from .EconHelper import Government
 from django.core.files import File
 from .HexList import HexList
+from .HexList2 import HexList2
 from .ArmyCombat import ArmyCombat
 from django.db.models.fields import *
 import os
@@ -17,7 +18,7 @@ class GameEngine():
 	def __init__(self, num_players, nameListInput):
 		self.nameList = nameListInput
 		self.EconEngines = []
-		CountryList = ['Neutral','Spain','UK','France','Germany','Italy']
+		CountryList = nameListInput#['Neutral','Spain','UK','France','Germany','Italy']
 		self.CountryNameList = CountryList
 		self.nameList = CountryList
 		good_names = ['Deposits','Loans','UnskilledLabour','Engineer','Miner','Farmer','Metallurgist','Teacher','Doctor','Physicist','Education','Food','Clothes','Services','Housing','Construction','Healthcare','Military','MedicalEquipment','Steel','Crops','Iron','Coal','Oil','Transport','Machinery']+CountryList+['Money']
@@ -54,30 +55,28 @@ class GameEngine():
 		researcher_indexes, industry_dict = self.create_industry_dict(good_names, good_types, industry_types2,industry_value_dict)
 		education_array = [[2,0],[3,7],[4,2],[5,2],[6,4],[7,7],[8,10],[8,10]]
 		final_goods = ['Education','Food','Clothes','Services','Housing','Construction','Healthcare','Military','Transport','Capital']
-		hex_list = HexList().hexList
-		M = Manager(hex_list, good_names, good_types, industry_types, num_households, num_corp_per_industry, industry_dict, CountryList, transportable_indexes, education_array, final_goods, researcher_indexes)
-		M.run_turn(8)
-		self.EconEngines = M.CountryList
 		temp = 0
 		if num_players > 7:
 			#for i in range(0,num_players):
 			#self.EconEngines.append(Country())
-			temp = num_players - 7
-			num_players2 = 7
+			#temp = num_players - 7
+			#num_players2 = 7
+			hex_list = HexList2().hexList
+			#hex_list = HexList().hexList2
 			#for i in range(0,num_players2):
 			#self.EconEngines[i].run_turn(13)
 		else:
-			for i in range(0,num_players):
-				pass
-				#self.EconEngines.append(Country())
-				#self.EconEngines[i].run_turn(13)
-				#self.EconEngines[i].Military = 50000
+			hex_list = HexList().hexList
+		M = Manager(hex_list, good_names, good_types, industry_types, num_households, num_corp_per_industry, industry_dict, CountryList, transportable_indexes, education_array, final_goods, researcher_indexes)
+		M.run_turn(8)
+		self.EconEngines = M.CountryList
 		self.TradeEngine = M
 		trade_diagram(CountryList, self.TradeEngine.trade_balance, "trade")
 		self.ArmyCombat = ArmyCombat()
 		self.var_list = ['Welfare','Education','Military','Infrastructure','Science']
 		self.variable_list = ['Welfare','Education','Military','InfrastructureInvest','ScienceInvest']
 		self.save_variable_list(self.var_list, num_players)
+		#all_players = Player.objects.filter(game=g)
 		countries = self.nameList
 		self.TarriffsArr = {i:{k:[0.1 for i in range(0,8)] for k in countries} for i in countries}
 		#import pdb; pdb.set_trace()
@@ -101,32 +100,33 @@ class GameEngine():
 			#self.apply_hex_number(g, p, country)
 			self.start_hex_number(g, p, country)
 
-	def run_engine(self, g, graphs=True, years_run=1):
+	def run_engine(self, g, graphs=True, years_run=1, projection=False):
 		#Resetting model variables
 		all_players = Player.objects.filter(game=g)
 		if graphs:
-			self.set_vars(g, all_players)
-		if g.num_players > 1:
-			for p in all_players:
+			self.set_vars(g, all_players, projection)
+		if not projection:
+			if g.num_players > 1:
+				for p in all_players:
+					f = ResetTurn(instance=p)
+					pla = f.save(commit=False)
+					pla.ready = False
+					pla.projection_unloaded = True
+					pla.save()
+				neutral_player2 = Player.objects.filter(name="Neutral")[0]
+				neutral_player2.ready = True
+				neutral_player2.save()
+			else:
+				p = Player.objects.filter(user=g.host)[0]
+				print(p.name)
 				f = ResetTurn(instance=p)
 				pla = f.save(commit=False)
 				pla.ready = False
-				pla.projection_unloaded = True
 				pla.save()
-			neutral_player2 = Player.objects.filter(name="Neutral")[0]
-			neutral_player2.ready = True
-			neutral_player2.save()
-		else:
-			p = Player.objects.filter(user=g.host)[0]
-			print(p.name)
-			f = ResetTurn(instance=p)
-			pla = f.save(commit=False)
-			pla.ready = False
-			pla.save()
-		all_armies = Army.objects.filter(game=g)
-		for a in all_armies:
-			a.moved = False
-		self.ArmyCombat.doCombat(g)
+			all_armies = Army.objects.filter(game=g)
+			for a in all_armies:
+				a.moved = False
+			self.ArmyCombat.doCombat(g)
 		#Running engine
 		#self.fix_variables()
 		self.TradeEngine.run_turn(years_run)
@@ -247,7 +247,7 @@ class GameEngine():
 			g.save()
 		os.remove(a[7] +'.png')
 
-	def set_vars(self, g, all_players):
+	def set_vars(self, g, all_players, projection=False):
 		transfer_array = [[0 for j in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))]
 		military_transfer = [[0 for j in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))]
 		for p in all_players:
@@ -277,7 +277,7 @@ class GameEngine():
 
 			#country.GovernmentInvest = gov_invest #p.InfrastructureInvest + p.ScienceInvest
 			#total_money = revenue*country.GovernmentInvest + total_investor_money
-			country.spending[country.InfrastructureIndex] = p.InfrastructureInvest
+			country.InfrastructureInvest = p.InfrastructureInvest
 			country.ResearchSpend = p.ScienceInvest
 			#country.QuickInvestment = p.CapitalInvestment
 			#import pdb; pdb.set_trace();
@@ -331,6 +331,8 @@ class GameEngine():
 		#ADD these functions:
 		self.TradeEngine.trade_money(transfer_array)
 		self.TradeEngine.trade_military_goods(military_transfer)
+		if projection:
+			return
 		hex_list = Hexes.objects.filter(game=g, water=False)
 		for h in range(0, len(hex_list)):
 			market = self.TradeEngine.market_list[self.TradeEngine.location_names.index(hex_list[h].name)]
@@ -338,14 +340,17 @@ class GameEngine():
 			hex_list[h].population = int(market.population[-1])
 			resentment = round(market.Resentment[-1],3)
 			hex_list[h].resentment = resentment
-			if resentment > 0.17:
+			if resentment > 0.2:
 				self.rebel(g, hex_list[h], resentment)
 			hex_list[h].save()
 
 	def save_variable_list(self, var_list, player_num):
 		for i in var_list:
 			#change to 17
-			setattr(self,i,[[0.02 for i in range(0,5)] for i in range(player_num)])
+			if i == "Education" or i == "Military":
+				setattr(self,i,[[0.01 for i in range(0,8)] for i in range(player_num)])
+			else:
+				setattr(self,i,[[0.0 for i in range(0,8)] for i in range(player_num)])
 	def append_variable_list(self, var_list, variable_list, index, player):
 		for i in range(0,len(var_list)):
 			getattr(self,var_list[i])[index].append(getattr(player, variable_list[i]))
@@ -562,7 +567,7 @@ class GameEngine():
 		if p.name != "Neutral":
 			neutral_player = Player.objects.filter(game=g,name="Neutral")[0]
 			self.switch_hex(hex2, neutral_player, g)
-			Army.objects.create(game=g, size=hex2.population*res*100,controller=neutral_player, naval=False, location=hex2, name=hex2.name+" Rebel Army")
+			Army.objects.create(game=g, size=int(hex2.population*res*10),controller=neutral_player, naval=False, location=hex2, name=hex2.name+" Rebel Army")
 			message2 = "In "+p.name+"'s territory a rebel army of size "+str(round(hex2.population*res*100,0))+" rose up in "+hex2.name
 			turn = g.GameEngine.get_country_by_name("UK").time - 6
 			Notification.objects.create(game=g, message=message2,year=turn)

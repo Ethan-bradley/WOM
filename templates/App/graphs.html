@@ -22,7 +22,11 @@
           <p class="text-secondary">Current Year: {{ CurrentYear }}</p>
 
           {% for name in graphs %}
-            
+          
+          {% if name == 'Domestic_Unemployment' %}
+          <h2 class="account-heading">Domestic Graphs <span style="float:right;" data-toggle="tooltip" title="Here are the local economic data graphs for each of the hexes you control.">ℹ️ </span></h2>
+          {% endif %}
+
           <canvas id={{ name }}></canvas>
         
           {% endfor %}

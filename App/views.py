@@ -804,7 +804,7 @@ def graph(request, g, p):
     return render(request, 'App/graphs.html', context)
 
 def gamegraph(g, p, context, graphmode, game):
-    def create_compare_graph(attribute,title,trade,countries,start,  graph_dict={}, game=None, econattr=True):
+    def create_compare_graph(attribute,title,trade,countries,start,  graph_dict={}, game=None, econattr=True, marketattr=False):
         data = {'Country': [],
         title: [],
         'Year':[]
@@ -813,7 +813,7 @@ def gamegraph(g, p, context, graphmode, game):
         graph_dict['colors'].append([])
         graph_dict['line_titles'].append([])
         last_index = len(graph_dict['data']) - 1
-        for j in range(0, len(trade.exchangeRateArr)):
+        for j in range(0, len(countries)):
             #if attribute == "EmploymentRate":
             #import pdb;pdb.set_trace()
             if hasattr(countries[j], attribute) and isinstance(getattr(countries[j], attribute), list):
@@ -822,11 +822,7 @@ def gamegraph(g, p, context, graphmode, game):
                 arr = getattr(trade, attribute)[j][start:]
             else:
                 #import pdb; pdb.set_trace()
-                if j == 14:
-                    arr = getattr(game, attribute)[j][start + 8:]
-                else:
-                    arr = getattr(game, attribute)[j][start + 5:]
-
+                arr = getattr(game, attribute)[j][start:]
                 if len(arr) == 0:
                     continue
             for i in range(1,len(arr)):
@@ -834,9 +830,15 @@ def gamegraph(g, p, context, graphmode, game):
                     arr[i] = arr[i-1]
             data[title] += arr
             data['Year'] += [i for i in range(0,len(arr))]
-            data['Country'] += [trade.CountryNameList[j] for i in range(0,len(arr))]
+            if marketattr:
+                data['Country'] += [countries[j].hexName for i in range(0,len(arr))]
+            else:
+                data['Country'] += [trade.CountryNameList[j] for i in range(0,len(arr))]
             graph_dict['data'][last_index].append(arr)
-        graph_dict['line_titles'][last_index] = [trade.CountryNameList[i] for i in range(0,len(trade.CountryNameList))]
+        if marketattr:
+            graph_dict['line_titles'][last_index] = [countries[i].hexName for i in range(0,len(countries))]
+        else:
+            graph_dict['line_titles'][last_index] = [trade.CountryNameList[i] for i in range(0,len(trade.CountryNameList))]
         graph_dict['colors'][last_index] = ['rgb('+str(color1)+','+str(color1*50 % 255)+','+str(255 - color1)+')' for color1 in range(0,255,int(255/len(countries)))]
         if econattr:
             #fig = px.line(data,x='Year', y=title,title=title, color="Country")
@@ -864,7 +866,7 @@ def gamegraph(g, p, context, graphmode, game):
     create_compare_graph("GDP", "GDP", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("InterestRate", "Interest_Rate", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("PopulationArr", "Population", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
-    create_compare_graph("GDPPerCapita", "Real_GDP_Per_Capita_in_$US", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("GDPPerCapita", "Real_GDP_Per_Capita", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("CapitalArr", "Capital", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("CapitalPerPerson", "Capital_Per_Person", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("EmploymentRate", "Employment_Rate", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
@@ -878,8 +880,22 @@ def gamegraph(g, p, context, graphmode, game):
     create_compare_graph("Bankruptcies", "Bankruptcies", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("gini", "gini", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     #import pdb; pdb.set_trace()
+    #Local country graphs
     create_compare_graph(graphmode.mode, graphmode.get_mode_display(), g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict, game.GameEngine, False)
-    
+    market_list = p.get_country().markets
+    create_compare_graph("unemployment", "Domestic_Unemployment", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("output_growth", "Domestic_GDP_Growth", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("output", "Domestic_GDP", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("output_per_capita", "Domestic_GDP_Per_Capita", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("inflation", "Domestic_Inflation", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("cpi", "Domestic_GDP_Deflator", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("EducationArr2", "Domestic_Education", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("Resentment", "Domestic_Resentment", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("happiness", "Domestic_Happiness", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("gini", "Domestic_gini", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("CapitalArr", "Domestic_Capital", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    create_compare_graph("CapitalPerPerson", "Domestic_Capital_Per_Person", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+
     context.update({
         'GoodsPerCapita':g.GoodsPerCapita,
         'Inflation':g.Inflation,
@@ -1195,61 +1211,67 @@ def projection(g, p, context, run=True):
         data = getattr(country, var)[start:]
         labels = [i for i in range(0,len(data))]
         return data, labels
+    def create_compare_graph(attribute,title,trade,countries,start,  graph_dict={}, game=None, econattr=True):
+        data = {'Country': [],
+        title: [],
+        'Year':[]
+        }
+        graph_dict['data'].append([])
+        graph_dict['colors'].append([])
+        graph_dict['line_titles'].append([])
+        last_index = len(graph_dict['data']) - 1
+        for j in range(0, len(trade.exchangeRateArr)):
+            #if attribute == "EmploymentRate":
+            #import pdb;pdb.set_trace()
+            if hasattr(countries[j], attribute) and isinstance(getattr(countries[j], attribute), list):
+                arr = getattr(countries[j], attribute)[start:]
+            """elif hasattr(trade, attribute):
+                arr = getattr(trade, attribute)[j][start:]
+            else:
+                #import pdb; pdb.set_trace()
+                if j == 14:
+                    arr = getattr(game, attribute)[j][start + 8:]
+                else:
+                    arr = getattr(game, attribute)[j][start + 5:]
 
+                if len(arr) == 0:
+                    continue"""
+            for i in range(1,len(arr)):
+                if math.isnan(arr[i]):
+                    arr[i] = arr[i-1]
+            data[title] += arr
+            data['Year'] += [i for i in range(0,len(arr))]
+            data['Country'] += [trade.CountryNameList[j] for i in range(0,len(arr))]
+            graph_dict['data'][last_index].append(arr)
+        graph_dict['line_titles'][last_index] = [trade.CountryNameList[i] for i in range(0,len(trade.CountryNameList))]
+        graph_dict['colors'][last_index] = ['rgb('+str(color1)+','+str(color1*50 % 255)+','+str(255 - color1)+')' for color1 in range(0,255,int(255/len(countries)))]
+        if econattr:
+            #fig = px.line(data,x='Year', y=title,title=title, color="Country")
+            #fig.update_xaxes(title="Year")
+            #fig.update_yaxes(title=title)
+            graph_dict['title'].append(title)
+        else:
+            graph_dict['title'].append("Budget:_"+str(attribute))
+        #if econattr:
+        #fig.write_html("templates/App/"+title+".html")
+    
     gtemp = g
     ptemp = p
     g = Game.objects.filter(name=g)[0]
     p = Player.objects.filter(name=p)[0]
+    start = 5
     if True:
-        new_country = copy.deepcopy(p.get_country())
-        country = new_country
-        #Set variables for new_country
-        new_country.IncomeTax = p.IncomeTax
-        new_country.CorporateTax = p.CorporateTax
-        new_country.MoneyPrinting = p.MoneyPrinting
-        welfare = ((p.Welfare + p.AdditionalWelfare)*new_country.money[8])/new_country.money[5]
-        gov_invest = ((p.InfrastructureInvest + p.ScienceInvest)*new_country.money[8])/new_country.money[5]
-        gov_goods = ((p.Education + p.Military)*new_country.money[8])/new_country.money[5]
-        if welfare + gov_invest + gov_goods > 1:
-            country.BondWithdrawl = (welfare + gov_invest + gov_goods - 1)*country.money[5]
-            if country.BondWithdrawl > country.money[1]*0.5:
-                #Country is Bankrupt if this occurs.
-                country.BondWithdrawl = country.money[1]*0.5
-            welfare = ((p.Welfare + p.AdditionalWelfare)*new_country.money[8])/(new_country.money[5]+new_country.BondWithdrawl)
-            gov_invest = ((p.InfrastructureInvest + p.ScienceInvest)*new_country.money[8])/(new_country.money[5]+new_country.BondWithdrawl)
-            gov_goods = ((p.Education + p.Military)*new_country.money[8])/(new_country.money[5]+new_country.BondWithdrawl)
-
-        if ((p.Education + p.Military) != 0):
-            new_country.EducationSpend = p.Education/(p.Education + p.Military)
-            new_country.MilitarySpend = p.Military/(p.Education + p.Military)
-        else:
-            new_country.EducationSpend = 0
-
-        new_country.GovGoods = gov_goods
-        #country.BondWithdrawl = p.Bonds
-        #country.Bonds = p.Bonds
-        #country.GovWelfare = p.Welfare + p.AdditionalWelfare
-        new_country.GovWelfare = welfare
-        #Investment
-        total_gov_money = new_country.money[5] + new_country.BondWithdrawl
-        total_investor_money = new_country.money[4]*new_country.InvestmentRate
-
-        country.GovernmentInvest = gov_invest #p.InfrastructureInvest + p.ScienceInvest
-        total_money = country.money[5]*country.GovernmentInvest + total_investor_money
-        new_country.InfrastructureInvest = ((total_gov_money*((p.InfrastructureInvest*new_country.money[8])/new_country.money[5]))/total_money) + ((total_investor_money*0.1)/total_money)
-        new_country.ScienceInvest = ((total_gov_money*((p.ScienceInvest*new_country.money[8])/new_country.money[5]))/total_money) + ((total_investor_money*0.05)/total_money)
-        #country.QuickInvestment = p.CapitalInvestment
-        new_country.TheoreticalInvest = p.TheoreticalInvest
-        new_country.PracticalInvest = p.PracticalInvest
-        new_country.AppliedInvest = p.AppliedInvest
+        
 
         """t = GraphCountryInterface.objects.filter(game=g,controller=p)[0]
         other_player = Player.objects.filter(country=t.country)[0]
         new_country2 = copy.deepcopy(p.get_country())
         country = new_country"""
-
+        temp = g.GameEngine.run_engine(g, False, 3, True)
+        new_engine = temp[1]
+        print("Creating Projection")
         #new_country.run_turn(5)
-        create_graph('InflationTracker','Inflation',new_country,4)
+        """create_graph('InflationTracker','Inflation',new_country,4)
         create_graph('UnemploymentArr','Unemployment',new_country,4)
         create_graph('GoodsPerCapita','GoodsPerCapita',new_country,4)
         create_graph('GDPPerCapita','RealGDPPerCapita',new_country,4)
@@ -1259,19 +1281,30 @@ def projection(g, p, context, run=True):
         unemployment, labels = create_single_graph(new_country,4,'UnemploymentArr')
         GoodsPerCapita, labels = create_single_graph(new_country,4,'GoodsPerCapita')
         GDPPerCapita, labels = create_single_graph(new_country,4,'GDPPerCapita')
-        Consumption, labels = create_single_graph(new_country,4,'ConsumptionArr')
+        Consumption, labels = create_single_graph(new_country,4,'ConsumptionArr')"""
+        graph_dict = {
+        'title':[],
+        'data':[],
+        'colors':[],
+        'line_titles':[]
+        }
+        create_compare_graph("UnemploymentArr", "Unemployment", new_engine, new_engine.CountryList, start, graph_dict)
+        create_compare_graph("GDPGrowth", "GDP_Growth", new_engine, new_engine.CountryList, start, graph_dict)
+        create_compare_graph("GDPPerCapita", "Real_GDP_Per_Capita_in_$US", new_engine, new_engine.CountryList, start, graph_dict)
+        create_compare_graph("CapitalPerPerson", "Capital_Per_Person", new_engine, new_engine.CountryList, start, graph_dict)
+        create_compare_graph("EmploymentRate", "Employment_Rate", new_engine, new_engine.CountryList, start, graph_dict)
+        create_compare_graph("InflationTracker", "Inflation", new_engine, new_engine.CountryList, start, graph_dict)
+        create_compare_graph("ResentmentArr", "Resentment", new_engine, new_engine.CountryList, start, graph_dict)
+        create_compare_graph("Happiness", "Happiness", new_engine, new_engine.CountryList, start, graph_dict)
     context.update({
-        'unemployment_graph': unemployment,
-        'inflation_graph': inflation,
-        'goodspercapita_graph': GoodsPerCapita,
-        'gdppercapita_graph': GDPPerCapita,
-        'consumptionpercapita_graph': Consumption,
         'game':gtemp,
         'player':ptemp,
         'notifications': Notification.objects.filter(game=g)[::-1],
-        'labels':labels,
-        'curr_year': new_country.time - 23,
+        'curr_year': temp[0][0].time - 6,
         'budget_projections': "App/graphs/"+p.name+"budgetgraphprojections.html",
+        'graphs': graph_dict['title'],
+        'graph_dict': graph_dict,
+        'labels':[i for i in range(0,len(new_engine.CountryList[0].UnemploymentArr)-start)],
         #'posts': posts
     })
 

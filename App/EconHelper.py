@@ -905,12 +905,14 @@ class Government(Household):
     self.Education = 0
     self.num_children = 1
     self.ResAm = 0
+    self.InfrastructureInvest = 0.0
     self.Military = 0
     self.time = 0
     self.subsidies = [0 for i in range(0,len(goods_pref))]
     self.price_history = [[] for i in range(0,len(self.goods_pref))]
     self.supply_history = [[] for i in range(0,len(self.goods_pref))]
     self.labour_indexes = None
+    self.markets = []
 
     #Arrays
     self.IncomeTaxArray = [0]
@@ -931,6 +933,7 @@ class Government(Household):
     self.EducationIndex = good_names.index('Education')
     self.MilitaryIndex = good_names.index('Military')
     self.InfrastructureIndex = good_names.index('Construction')
+    self.TransportIndex = good_names.index('Transport')
 
     self.spending[self.EducationIndex] = 0.01
     self.spending[self.MilitaryIndex] = 0.01
@@ -997,6 +1000,7 @@ class Government(Household):
     self.total_spending = min(sum(self.spending),1)
     self.normalize()
     spending = self.total_spending*gdp
+    self.subsidies[self.TransportIndex] = (self.InfrastructureInvest*gdp)/2
     self.EducationArray[-1] += (self.spending[self.EducationIndex]*gdp)
     self.MilitaryArr[-1] += (self.spending[self.MilitaryIndex]*gdp)
     self.InfrastructureArr[-1] += (self.spending[self.InfrastructureIndex]*gdp)
@@ -1787,6 +1791,7 @@ class Manager():
           else:
             CM = CreationManager(good_names, good_types, industry_types, num_households, num_corp_per_industry, industry_dict, final_goods, self.hex_list[i][j], researcher_indexes, transportable_indexes, self, foreign_currencies=self.currency_indexes, government_created=self.CountryList[self.currNames.index(hex_array[i][j][4])])
           M = CM.market
+          self.CountryList[self.currNames.index(hex_array[i][j][4])].markets.append(M)
           M.manager = self
           M.hexName = hex_array[i][j][0]
           self.market_list.append(M)
@@ -1932,7 +1937,9 @@ class Manager():
   def switch_hex(self, hex, to, g=None):
     market = self.market_list[self.location_names.index(hex)]
     prev_gov = market.government
+    prev_gov.markets.remove(market)
     country_to = self.get_country(to)
+    country_to.markets.append(market)
     for trader in range(0,len(market.traders)):
       if market.traders[trader].other_market.government == country_to:
         market.traders[trader].type2 = "Trader"

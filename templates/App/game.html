@@ -3,10 +3,14 @@
 {% block content %}
 <div class="content-section">
     <legend class="border-bottom mb-4">{{ country }} <span style="float:right;" data-toggle="tooltip" title="On the Government Budget page, you can change your domestic policies, however you can also just keep the orders as is. Note that Money Printing is not a revenue source. When you are ready, you can submit your current domestic policies by clicking Submit Spending and Tax Plan. If you also want to run the next turn, you can/ need to select the Ready ✅ at the bottom of the page">ℹ️ </span> </legend>
-    {% if inflation_graph %}
     <h2 class="account-heading">Projection Graphs</h2>
            <h2 class="account-heading">Graphs</h2>
-           {% include budget_projections %}
+           
+          {% for name in graphs %}
+            
+            <canvas id={{ name }}></canvas>
+        
+          {% endfor %}
         <!-- <div id="container" style="width: 75%;">
       <canvas id="goods-chart"></canvas>
         </div>
@@ -22,10 +26,9 @@
         <div id="container" style="width: 75%;">
       <canvas id="growth-chart"></canvas>
         </div>-->
-    {% endif %}
     <legend class="border-bottom mb-4">Individual Product Forms <span style="float:right;" data-toggle="tooltip" title="Specific to each good, you can also:
 - set an Export Restriction for each good. This limits what percentage of the yearly production of that good can be exported. 100% means all can be exported (but usually won't be), 0% means nothing can be exported
-- divide the (Applied Science) Research Budget (Subsidy) among the 8 production processes. These have to add up to 100% (i.e. 1). It probably usually makes sense to spend 0 in production processes of resources that you do not have within your borders, unless you plan to conquer new hexes at some point !">ℹ️ </span>
+- Subsidy amount given to a corporation within a specific industry (dollar amount).">ℹ️ </span>
 </legend>
     <form method="POST">
         {% csrf_token %}
@@ -119,9 +122,45 @@
   }
   };
 
+  function handleClick(e, legendItem, legend) {
+    const index = legendItem.datasetIndex;
+    const ci = legend.chart;
+    var count = 0
+    for (var i = 0; i < legend.chart.data.datasets.length; i++) {
+            if (!ci.isDatasetVisible(i)) {
+              count++;
+            }
+        }
+    if (ci.isDatasetVisible(index) && count == legend.chart.data.datasets.length - 1) {
+      for (var i = 0; i < legend.chart.data.datasets.length; i++) {
+            ci.show(i);
+        }
+        legendItem.hidden = false;
+    } else if (ci.isDatasetVisible(index)) {
+        for (var i = 0; i < legend.chart.data.datasets.length; i++) {
+          if (i != legendItem.datasetIndex) {
+            ci.hide(i);
+          }
+        }
+        legendItem.hidden = true;
+    } else {
+        ci.show(index);
+        legendItem.hidden = false;
+    }
+}
+
+
+// Removes the alpha channel from background colors
+function handleLeave(evt, item, legend) {
+  for (var i = 0; i < legend.chart.data.datasets.length; i++) {
+    legend.chart.show(i) //.data.datasets[i].borderColor = legend.chart.data.datasets[i].borderColor.replace(/[^,]+(?=\))/, '1.0')
+  }
+  legend.chart.update();
+}
+
   Chart.register({id: 'verticallineplugin', verticalLinePlugin});
 
-const data = {
+/*const data = {
   labels: {{ labels|safe }},
   datasets: [{
     label: 'Unemployment',
@@ -130,9 +169,9 @@ const data = {
     borderColor: 'rgb(75, 192, 192)',
     tension: 0.1
   }]
-};
+};*/
 
-var config = {
+/*var config = {
   type: 'line',
   data: data,
   options: {
@@ -141,7 +180,7 @@ var config = {
   lineAtIndex: [{{curr_year}}],
 };
 
-const data2 = {
+/*const data2 = {
   labels: {{ labels|safe }},
   datasets: [{
     label: 'Inflation',
@@ -220,10 +259,58 @@ var growth2 = {
         responsive: true,
       },
   lineAtIndex: [{{curr_year}}],
+};*/
+
+var graph_dict = {{graph_dict|safe}};
+var graph_array = [];
+var index = 0;
+for (const title of graph_dict['title']) {
+  var dataset = [];
+  for (var i=0; i < graph_dict['line_titles'][index].length; i++) {
+    const temp = {
+      label: graph_dict['line_titles'][index][i],
+      data: graph_dict['data'][index][i],
+      fill: false,
+      borderColor: graph_dict['colors'][index][i],
+      tension: 0.1
+    };
+    dataset.push(temp);
+  };
+  var data5 = {
+  labels: {{ labels|safe }},
+  datasets: dataset
+  };
+  var graph = {
+  type: 'line',
+  data: data5,
+  options: {
+        responsive: true,
+        
+        plugins: {
+          title: {
+            display: true,
+            text: title
+        },
+        legend: {
+                labels: {
+                  font: {
+                        size: 8
+                    }
+                },
+                position:'right',
+                onClick: handleClick
+              },
+      },
+        
+
+    }
+  };
+  graph_array.push(graph);
+  index += 1;
 };
 
 window.onload = function() {
-  var ctx = document.getElementById('unemployment-chart').getContext('2d');
+  /*var ctx = document.getElementById('unemployment-chart').getContext('2d');
       window.unemployment = new Chart(ctx, config);
       var ctx = document.getElementById('goods-chart').getContext('2d');
       window.goods = new Chart(ctx, goods_graph);
@@ -232,7 +319,13 @@ window.onload = function() {
       var ctx = document.getElementById('gdp-per-chart').getContext('2d');
       window.growth = new Chart(ctx, growth3);
       var ctx = document.getElementById('growth-chart').getContext('2d');
-      window.growth = new Chart(ctx, growth2);
+      window.growth = new Chart(ctx, growth2);*/
+      var index = 0;
+      for (const graph of graph_array) {
+        var ctx = document.getElementById(graph_dict['title'][index]).getContext('2d');
+        window.goods = new Chart(ctx, graph);
+        index += 1;
+      };
     };
 $(function () {
   $('[data-toggle="tooltip"]').tooltip()
