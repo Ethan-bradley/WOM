@@ -68,10 +68,8 @@ class GameEngine():
 		else:
 			hex_list = HexList().hexList
 		M = Manager(hex_list, good_names, good_types, industry_types, num_households, num_corp_per_industry, industry_dict, CountryList, transportable_indexes, education_array, final_goods, researcher_indexes)
-		M.run_turn(8)
 		self.EconEngines = M.CountryList
 		self.TradeEngine = M
-		trade_diagram(CountryList, self.TradeEngine.trade_balance, "trade")
 		self.ArmyCombat = ArmyCombat()
 		self.var_list = ['Welfare','Education','Military','Infrastructure','Science']
 		self.variable_list = ['Welfare','Education','Military','InfrastructureInvest','ScienceInvest']
@@ -83,6 +81,8 @@ class GameEngine():
 		self.SanctionsArr = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
 		self.ForeignAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
 		self.MilitaryAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
+		M.run_turn(8)
+		trade_diagram(CountryList, self.TradeEngine.trade_balance, "trade")
 	def run_more_countries(self, num_players):
 		if num_players > 5:
 			for i in range(7,num_players):
