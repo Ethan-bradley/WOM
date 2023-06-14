@@ -81,7 +81,7 @@ class GameEngine():
 		self.SanctionsArr = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
 		self.ForeignAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
 		self.MilitaryAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
-		M.run_turn(8)
+		M.run_turn(5)
 		trade_diagram(CountryList, self.TradeEngine.trade_balance, "trade")
 	def run_more_countries(self, num_players):
 		if num_players > 5:
