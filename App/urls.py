@@ -22,6 +22,7 @@ urlpatterns = [
     path('policies/<str:g>/<str:p>', views.policies, name='app-policies'),
     path('trade/<str:g>/<str:p>', views.trade, name='app-trade'),
     path('runNext/<str:g>', views.runNext, name='app-run-next'),
+    path('runNextScreen/<str:g>/<str:player>', views.runNextScreen, name='app-runnextscreen'),
     path('runNext2/<str:g>', views.runNext2, name='app-run-next-2'),
     path('runNext3/<str:g>', views.runNext3, name='app-run-next-3'),
     path('delete/<str:g>/<str:p>', views.delete, name='app-delete'),

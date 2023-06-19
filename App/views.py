@@ -162,7 +162,8 @@ def new_game(request):
                 #temp.GameEngine.run_start_trade(temp)
                 temp.save()
             messages.success(request, f'New Game created!')
-            return redirect('app-game', g=temp.name, player=curr_player.name)
+            #return redirect('app-game', g=temp.name, player=curr_player.name)
+            return redirect('app-runnextscreen', g=temp.name, player=curr_player.name)
         else:
             messages.warning(request, f'Choose another name. An existing game already has this name.')
             return redirect('app-new_game')
@@ -177,6 +178,14 @@ def new_game(request):
     reset_queries()
     return render(request, 'App/new_game.html', context)
 
+@login_required
+def runNextScreen(request, g, player):
+    temp = Game.objects.filter(name=g)[0]
+    #player = Player.objects.filter()
+    temp.GameEngine.run_more()
+    temp.save()
+    return redirect('app-game', g=temp.name, player=player)
+    
 @login_required
 def runNext(request, g):
     temp = Game.objects.filter(name=g)[0]
