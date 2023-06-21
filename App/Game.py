@@ -81,7 +81,7 @@ class GameEngine():
 		self.SanctionsArr = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
 		self.ForeignAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
 		self.MilitaryAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
-		M.run_turn(2) #3
+		M.run_turn(1) #3 #8
 		#trade_diagram(CountryList, self.TradeEngine.trade_balance, "trade")
 	def run_more_countries(self, num_players):
 		if num_players > 5:
@@ -107,7 +107,7 @@ class GameEngine():
 	def run_engine(self, g, graphs=True, years_run=1, projection=False):
 		#Resetting model variables
 		all_players = Player.objects.filter(game=g)
-		if graphs:
+		if graphs and self.EconEngines[0].time > 5:
 			self.set_vars(g, all_players, projection)
 		if not projection:
 			if g.num_players > 1:

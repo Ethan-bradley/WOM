@@ -162,8 +162,8 @@ def new_game(request):
                 #temp.GameEngine.run_start_trade(temp)
                 temp.save()
             messages.success(request, f'New Game created!')
-            #return redirect('app-game', g=temp.name, player=curr_player.name)
-            return redirect('app-runnextscreen', g=temp.name, player=curr_player.name)
+            return redirect('app-game', g=temp.name, player=curr_player.name)
+            #return redirect('app-runnextscreen', g=temp.name, player=curr_player.name)
         else:
             messages.warning(request, f'Choose another name. An existing game already has this name.')
             return redirect('app-new_game')
@@ -305,8 +305,9 @@ def joinGame(request, g):
             #Remove this if game isn't 2 player
             #temp.GameEngine.start_capital(temp)
             if temp.num_players == temp.curr_num_players:
-                temp.GameEngine.start_capital(temp)
-                temp.GameEngine.run_start_trade(temp)
+                pass
+                #temp.GameEngine.start_capital(temp)
+                #temp.GameEngine.run_start_trade(temp)
             messages.success(request, f'Successfully Joined a Game!')
             return redirect('app-game', g=temp.name, player=curr_player.name)
     else:
@@ -406,7 +407,7 @@ def game(request, g, player):
                 if ready_next_round:
                     #for i in range(0,g.years_per_turn - 1):
                     g.GameEngine.run_engine(g, True, g.years_per_turn)
-                    temp = g.GameEngine.run_engine(g)
+                    #temp = g.GameEngine.run_engine(g)
                     g.save()
                     #g.GameEngine = temp[0]
                     messages.success(request, f'Turn succesfully run!')

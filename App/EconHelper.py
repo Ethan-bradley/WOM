@@ -1030,7 +1030,10 @@ class Government(Household):
     self.InterestRate.append(self.interest_rate)
     self.TarriffCollectionArray.append(self.TariffCollection)
     self.TariffCollection = 0
-    self.GDPPerCapita.append(self.GDP[-1]/self.PopulationArr[-1])
+    if self.PopulationArr[-1] != 0:
+      self.GDPPerCapita.append(self.GDP[-1]/self.PopulationArr[-1])
+    else:
+      self.GDPPerCapita.append(1)
     if len(self.GDP) > 1:
       self.GDPGrowth.append((self.GDP[-1]/self.GDP[-2]-1)*100)
     self.time += 1
