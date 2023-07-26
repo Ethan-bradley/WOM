@@ -447,6 +447,8 @@ def game(request, g, player):
     #import pdb; pdb.set_trace();
     govDebt = round(player.get_country().Government_SavingsArray[-1]/player.get_country().GDP[-1], 2)
     country = player.get_country()
+    #import pdb;
+    #pdb.set_trace()
     govRevenue = round(sum((country.IncomeTaxArray[-2], country.CorporateTaxArray[-2], country.TarriffCollectionArray[-2], country.Government_Savings*country.interest_rate)))
     govSpend = round(sum([country.EducationArray[-2], country.MilitaryArr[-2], country.GovWelfareArray[-2], country.ScienceBudgetArr[-2], country.InfrastructureArr[-2], country.SubsidyArr[-2]])/country.GDP[-1],2)
     context.update({

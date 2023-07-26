@@ -32,7 +32,8 @@ class ArmyCombat():
 		army_list = Army.objects.filter(game=g)
 		for a in army_list:
 			if a.controller.get_country().Military - a.size*0.1 < 0:
-				self.rebel(g,a)
+				pass
+				#self.rebel(g,a)
 			else:
 				g.GameEngine.modify_country_by_name(a.controller.country.name, 'Military', a.controller.get_country().Military - a.size*0.5)
 				g.save()
@@ -151,7 +152,8 @@ class ArmyCombat():
 		#import pdb; pdb.set_trace()
 		to_country = player_to.country.name
 		#import pdb;pdb.set_trace()
-		g.GameEngine.TradeEngine.switch_hex(h.name, to_country, g)
+		if not h.water:
+			g.GameEngine.TradeEngine.switch_hex(h.name, to_country, g)
 		
 		g.save()
 		h.controller = player_to

@@ -81,7 +81,7 @@ class GameEngine():
 		self.SanctionsArr = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
 		self.ForeignAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
 		self.MilitaryAid = {i:{k:[0 for i in range(0,8)] for k in countries} for i in countries}
-		M.run_turn(1) #3 #8
+		M.run_turn(8) #3 #8 #1
 		#trade_diagram(CountryList, self.TradeEngine.trade_balance, "trade")
 	def run_more_countries(self, num_players):
 		if num_players > 5:
@@ -571,7 +571,7 @@ class GameEngine():
 		if p.name != "Neutral":
 			neutral_player = Player.objects.filter(game=g,name="Neutral")[0]
 			self.switch_hex(hex2, neutral_player, g)
-			Army.objects.create(game=g, size=int(hex2.population*res*10),controller=neutral_player, naval=False, location=hex2, name=hex2.name+" Rebel Army")
+			Army.objects.create(game=g, size=int(hex2.population*res),controller=neutral_player, naval=False, location=hex2, name=hex2.name+" Rebel Army")
 			message2 = "In "+p.name+"'s territory a rebel army of size "+str(round(hex2.population*res*100,0))+" rose up in "+hex2.name
 			turn = g.GameEngine.get_country_by_name("UK").time - 6
 			Notification.objects.create(game=g, message=message2,year=turn)

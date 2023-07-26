@@ -1984,7 +1984,7 @@ class Manager():
     Tarriffs = country.TarriffCollectionArray[start:-1]
     revenues = [Corporate_Tax[i] + Income_Tax[i] + Tarriffs[i] for i in range(0,len(Corporate_Tax))]
     
-    net = country.Government_SavingsArray[start:-1] #[1000, 1200, 1100, 800]
+    net = [0 for i in range(0,len(country.Government_SavingsArray[start:-1]))]#country.Government_SavingsArray[start:-1] #[1000, 1200, 1100, 800]
     collection = [Corporate_Tax, Income_Tax, Tarriffs]
     expense = [country.GovWelfareArray[start:-1],country.InfrastructureArr[start:-1],country.ScienceBudgetArr[start:-1],country.MilitaryArr[start:-1],country.EducationArray[start:-1], country.SubsidyArr[start:-1]]
     expenses = [sum([expense[j][i] for j in range(0,len(expense))]) for i in range(0,len(expense[0]))]
