@@ -14,4 +14,3 @@ plotly
 statistics
 pandas
 requests
-json
