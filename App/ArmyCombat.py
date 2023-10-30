@@ -153,6 +153,8 @@ class ArmyCombat():
 		to_country = player_to.country.name
 		#import pdb;pdb.set_trace()
 		if not h.water:
+			self.TradeEngine.hex_switches.append(h.name)
+			self.TradeEngine.hex_switches.append(to_country)
 			g.GameEngine.TradeEngine.switch_hex(h.name, to_country, g)
 		
 		g.save()

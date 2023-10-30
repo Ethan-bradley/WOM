@@ -5,6 +5,7 @@ import copy
 import matplotlib.cm as cm
 import plotly.graph_objects as go
 import plotly.express as px
+import math
 
 def create_income_barchart(incomes, num_bins):
     # Create the histogram of income data
@@ -794,9 +795,15 @@ class CentralBank(Bank):
     for i in range(0,len(market.households)):
         if market.households[i] != self:
           bottom += (1-market.households[i].goods_pref[good_index])*(market.households[i].endowments[good_index])
+    if bottom == 0:
+      print("Error with Central Bank loan bottom.")
+      bottom = 0.01
     #if market.turn > 11:
     #ipdb.set_trace()
     amount = top/((1-market.interest_rate) - bottom)
+    if amount == 0 or math.isnan(amount):
+      print("Error with Central Bank loan amount.")
+      amount = 0.01
     return amount
   
   def determine_deposit_amount(self, market, good_index):
@@ -810,7 +817,13 @@ class CentralBank(Bank):
     bottom = 0
     for i in range(0,len(market.households)):
           bottom += (1-market.households[i].goods_pref[good_index])*(market.households[i].endowments[good_index])
+    if bottom == 0:
+      print("Error with Central Bank deposit bottom.")
+      bottom = 0.01
     amount = (((1-market.interest_rate)*bottom) - top) #/market.prices[0]
+    if amount == 0 or math.isnan(amount):
+      print("Error with Central Bank loan amount.")
+      amount = 0.01
     return amount
 
 class CentralBank2(Bank):
@@ -858,9 +871,17 @@ class CentralBank2(Bank):
     for i in range(0,len(market.households)):
         if market.households[i].type2 != self:
           bottom += (1-market.households[i].goods_pref[good_index])*(market.households[i].endowments[good_index])
+    if bottom == 0:
+      print("Error with Central Bank loan bottom.")
+      bottom = 0.01
     #if market.turn > 11:
     #ipdb.set_trace()
-    amount = top/((1-market.deposit_rate) - bottom)
+    amount = top/((1-market.interest_rate) - bottom)
+    if amount == 0 or math.isnan(amount):
+      print("Error with Central Bank loan amount.")
+      amount = 0.01
+    #if market.turn > 11:
+    #ipdb.set_trace()
     return amount
   
   def determine_deposit_amount(self, market, good_index):
@@ -874,7 +895,13 @@ class CentralBank2(Bank):
     bottom = 0
     for i in range(0,len(market.households)):
           bottom += (1-market.households[i].goods_pref[good_index])*(market.households[i].endowments[good_index])
-    amount = (((1-market.deposit_rate)*bottom) - top) #/market.prices[0]
+    if bottom == 0:
+      print("Error with Central Bank deposit bottom.")
+      bottom = 0.01
+    amount = (((1-market.interest_rate)*bottom) - top) #/market.prices[0]
+    if amount == 0 or math.isnan(amount):
+      print("Error with Central Bank loan amount.")
+      amount = 0.01
     return amount
 
 """## Government"""
@@ -988,7 +1015,13 @@ class Government(Household):
   def normalize_variable_list(self):
     for i in range(0,len(self.var_list)):
       if self.weight[i] != 'N':
-        getattr(self, self.var_list[i])[-1] /= getattr(self, self.weight[i])[-1]
+        if getattr(self, self.weight[i])[-1] == 0:
+          print("Error",self,self.weight[i])
+        else:
+          getattr(self, self.var_list[i])[-1] /= getattr(self, self.weight[i])[-1]
+    if self.GDP[-1] == 0:
+      print("Error",self,'GDP')
+      return
     for i in range(0,len(self.goods_pref)-1):
         self.price_history[i][-1] /= self.GDP[-1]
         self.supply_history[i][-1] /= self.GDP[-1]
@@ -997,6 +1030,9 @@ class Government(Household):
     pass
 
   def run_turn(self, interest_rate, deposit_price, gdp):
+    if gdp < 1 or len(self.markets) == 0:
+      print("Skipped turn for this government.")
+      return
     self.total_spending = min(sum(self.spending),1)
     self.normalize()
     spending = self.total_spending*gdp
@@ -1016,6 +1052,9 @@ class Government(Household):
     self.ScienceBudgetArr[-1] += (self.ResAm)
   
   def record_data(self):
+    if self.GDP[-1] == 0:
+      print("GDP Error")
+      return
     self.Government_SavingsArray.append(self.Government_Savings)
     self.deficits.append(self.deficit)
     self.IncomeTaxArray.append(0)
@@ -1177,7 +1216,8 @@ class Market():
     self.hexName = ""
     self.manager = None
     self.runNum = 6#4
-    self.universityLevel = 0
+    self.universityLevel = 20
+    self.specialty = 'None'
     self.bankruptArr = []
     self.add = 15
     for i in range(0,len(self.households)):
@@ -1205,7 +1245,7 @@ class Market():
       self.prices[good_index] = 1
     elif good_index > 1:
       new_price = top/bottom
-      self.prices[good_index] = min(self.prices[good_index] + sticky*(new_price - self.prices[good_index]), self.prices[good_index]*15)
+      self.prices[good_index] = max(min(self.prices[good_index] + sticky*(new_price - self.prices[good_index]), self.prices[good_index]*15), self.prices[good_index]*0.1)
     else:
       self.prices[good_index] = top/bottom
     if top == 0:
@@ -1214,6 +1254,8 @@ class Market():
   
   def get_amounts(self, household_index, good_index):
     #print(good_index)
+    if good_index in self.labour_indexes:
+      self.households[household_index].goods_supply[good_index] = min((self.households[household_index].goods_pref[good_index]/self.prices[good_index])*(sum([(self.households[household_index].endowments[i])*self.prices[i] for i in range(0,len(self.goods_supply))])), self.households[household_index].goods_supply[good_index]*1.2)
     self.households[household_index].goods_supply[good_index] = (self.households[household_index].goods_pref[good_index]/self.prices[good_index])*(sum([(self.households[household_index].endowments[i])*self.prices[i] for i in range(0,len(self.goods_supply))]))
     return self.households[household_index].goods_supply[good_index]
   
@@ -1298,6 +1340,8 @@ class Market():
         elif self.households[i].type2 == "University":
           for j in self.labour_indexes:
               labour_used += self.households[i].goods_supply[j]
+          if self.specialty != 'None' and self.households[i].focus == self.specialty:
+            self.households[i].level = self.universityLevel*0.5
           self.households[i].run_turn(interest_rate=(self.interest_rate-self.inflation_expectation)*(1-self.depreciation), price=self.prices[self.households[i].output_good], wage=self.prices[2], run_shares=(i in household_random), prices=self.prices, actual_interest_rate=self.interest_rate, bank=self.get_random_bank())
         elif self.households[i].type2 == "Bank":
           #if self.turn > 20:
@@ -1645,6 +1689,7 @@ class CreationManager():
         endowments[j] = 0
       endowments[len(endowments)-1] = 1
       university = University(copy.deepcopy(goods_pref),[],1,shares,i,capital_index, labour_index, endowments=copy.deepcopy(endowments))
+      university.focus = self.universitySetup[i][0]
       corporations.append(university)
       for j in range(0, len(self.universitySetup[i])):
         self.techDict[self.universitySetup[i][j]] = university
@@ -1740,6 +1785,7 @@ class Manager():
   def __init__(self, hex_array, good_names, good_types, industry_types, num_households, num_corp_per_industry, industry_dict, CountryList, transportable_indexes, education_array, final_goods, researcher_indexes):
     self.market_list = []
     self.market_dict = {}
+    self.hex_switches = []
     self.Tariffs = []
     self.Sanctions = []
     self.hex_list = hex_array

@@ -29,6 +29,8 @@ urlpatterns = [
     path('projection/<str:g>/<str:p>', views.projection, name='app-projection'),
     path('runArmy/<str:g>', views.runArmy, name='app-run-army'),
     path('fixVars/<str:g>', views.fixVars, name='app-run-fix-vars'),
+    path('loading/<str:game>/<str:player>', views.loading_screen, name='loading_screen'),
+    path('check_status/<str:game>', views.check_task_status, name='check_status'),
 ] + static(settings.STATIC_URL,document_root = settings.STATIC_ROOT)
 
 # For Django >= 2.0

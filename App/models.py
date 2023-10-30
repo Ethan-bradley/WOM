@@ -30,6 +30,9 @@ class Game(models.Model):
 	neutral = models.CharField(max_length=100,default="Neutral")
 	board_size = models.IntegerField(default=7)
 	years_per_turn = models.IntegerField(default=1)
+	load_complete = models.BooleanField(default=False)
+	online = models.BooleanField(default=False)
+	game_started = models.BooleanField(default=False)
 	#players = ManyToManyField("Player")
 	#hexes = ManyToManyField("Hexes")
 	#TradeEngine = PickledObjectField()
@@ -154,6 +157,14 @@ class Hexes(models.Model):
 	iron = models.IntegerField(default=0)
 	coal = models.IntegerField(default=0)
 	wheat = models.IntegerField(default=0)
+	university_level = models.IntegerField(default=1)
+	MODES = [('Fo', 'Food'), ('Ed', 'Education'), ('Cl', 'Clothes'), ('Se', 'Services'), 
+                        ('Ho', 'Housing'), ('Co', 'Construction'), ('He', 'Healthcare'), ('Mi', 'Military'), 
+                        ('ME', 'MedicalEquipment'), ('St', 'Steel'), ('Cr', 'Crops'), ('Ir', 'Iron'), 
+                        ('Coa', 'Coal'), ('Oi', 'Oil'), ('Tr', 'Transport'), ('Ma', 'Machinery'), 
+                        ('De', 'Deposits'), ('Ph', 'Physics'), ('Bi', 'Biology'), ('Ch', 'Chemistry'), ('No','None')]
+
+	specialty = models.CharField(max_length=3,choices=MODES,default='No')
 	def __str__(self):
 		return self.name
 
@@ -259,7 +270,7 @@ class GraphInterface(models.Model):
 	COALPROD = 'CoalP'
 	OILPROD = 'OilP'
 	FOODPROD = 'FoodP'
-	CONSUMERPROD = 'ConsumerGoodsP'
+	CONSUMERPROD = 'ServicesP'
 	STEELPROD = 'SteelP'
 	MACHINERYPROD = 'MachineryP'
 	MODES = [
@@ -284,7 +295,7 @@ class GraphInterface(models.Model):
 	(COALPROD, 'Coal Production'),
 	(OILPROD, 'Oil Production'),
 	(FOODPROD, 'Food Production'),
-	(CONSUMERPROD, 'Consumer Goods Production'),
+	(CONSUMERPROD, 'Services Production'),
 	(STEELPROD, 'Steel Production'),
 	(MACHINERYPROD, 'Machinery Production')
 	]

@@ -210,7 +210,10 @@ class GovernmentSpendingForm(ModelForm):
         #self._errors['IncomeTax'] = self.error_class(['No errors'])
         return self.cleaned_data
 
-
+class UniversityForm(ModelForm):
+    class Meta:
+        model = Hexes
+        fields = ['university_level','specialty']
 
 
 class PolicyForm(ModelForm):

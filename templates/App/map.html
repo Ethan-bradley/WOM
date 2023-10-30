@@ -59,6 +59,17 @@
                 <button class="btn btn-outline-info" type="submit" id="ArmyCreate">Build Army</button>
             </div>
         </form>
+
+        <form method="POST">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">University <span style="float:right;" data-toggle="tooltip" title="Each hex comes with a university that does scientific research. It defaults to providing an equal amount of science funding to all research specialties, however you can change a universities specialty. You can also change a universities share of overall funding through its level.">ℹ️ </span> </legend>
+                {{ hexForm|crispy }}
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit" id="UniversityChange">Edit University</button>
+            </div>
+        </form>
     </div>
 
 <style type="text/css">

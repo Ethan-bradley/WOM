@@ -6,7 +6,7 @@ from django.forms import formset_factory, modelformset_factory
 from .Game import GameEngine
 from .models import Post
 from .models import Game, Player, IndTariff, Tariff, Hexes, Army, Policy, PolicyGroup, Country, PlayerProduct, Product, MapInterface, Notification, GraphInterface, GraphCountryInterface
-from .forms import NewGameForm, IndTariffForm, JoinGameForm, AddIndTariffForm, AddTariffForm, NextTurn, HexForm, ArmyForm, GovernmentSpendingForm, PolicyForm, PolicyFormSet, AddProductForm, AddPlayerProductForm, MapInterfaceForm, GraphInterfaceForm, GraphCountryInterfaceForm
+from .forms import NewGameForm, IndTariffForm, JoinGameForm, AddIndTariffForm, AddTariffForm, NextTurn, HexForm, ArmyForm, GovernmentSpendingForm, PolicyForm, PolicyFormSet, AddProductForm, AddPlayerProductForm, MapInterfaceForm, GraphInterfaceForm, GraphCountryInterfaceForm, UniversityForm
 from django.views.generic.edit import CreateView
 from django.apps import apps
 import json
@@ -23,6 +23,8 @@ from .helper import add_players, add_neutral
 from django.db import reset_queries
 import math
 import random
+import requests
+from django.http import JsonResponse
 #import django_rq
 #from rq import Queue
 #from worker import conn
@@ -56,11 +58,33 @@ def lobby(request):
     }
     return render(request, 'App/lobby.html', context)
 
+def loading_screen(request, game, player):
+    game_obj = Game.objects.filter(name=game)[0]
+    context = {
+    'game':game,
+    'player':player,
+    'game_started':game_obj.game_started
+    }
+    return render(request, 'App/loading.html',context)
+
+def check_task_status(request, game):
+    game = Game.objects.filter(name=game)[0]
+    # You would typically have some logic here to check the status of the task.
+    # For this example, we assume the task status is stored in a variable.
+    task_status = {
+        "task_complete": game.load_complete,  # Set this to False or True based on task status.
+        "progress": 100,  # Progress percentage (if applicable).
+        "error_message": None  # Error message (if an error occurred).
+    }
+
+    return JsonResponse(task_status)
+
 @login_required
 def new_game(request):
+    online = True
     #tracemalloc.start()
     if request.method == 'POST':
-        form = NewGameForm(request.POST)
+        form = NewGameForm(request.POST, prefix=game)
         player_form = JoinGameForm(request.POST)
         if form.is_valid():
             pf = player_form.save(commit=False)
@@ -71,14 +95,14 @@ def new_game(request):
                 if pf.country.large:
                     messages.warning(request, f'Choose another country. This country is not available for the 5 person map.')
                     return redirect('app-new_game')
-                f.GameEngine = GameEngine(6, ['UK','Germany','France','Spain','Italy','Neutral'])
+                f.GameEngine = GameEngine(6, ['UK','Germany','France','Spain','Italy','Neutral'], f.name)
             else:
                 #f.GameEngine = GameEngine(15, ['UK','Germany','France','Spain','Italy','Poland','Sweden','Egypt','Algeria','Turkey','Ukraine','Russia','Iran','Saudi Arabia','Neutral'])
                 f.board_size = 14
             f.curr_num_players = 1
             if f.num_players > 5 or f.num_players == -1:
                 #job = q.enqueue(create_countries, 'http://heroku.com', on_success=organize_countries)
-                f.GameEngine = GameEngine(15,['UK', 'Germany', 'France', 'Spain', 'Italy', 'Poland', 'Sweden', 'Egypt','Algeria', 'Turkey', 'Ukraine', 'Russia', 'Iran', 'Saudi Arabia', 'Neutral'])
+                f.GameEngine = GameEngine(15,['UK', 'Germany', 'France', 'Spain', 'Italy', 'Poland', 'Sweden', 'Egypt','Algeria', 'Turkey', 'Ukraine', 'Russia', 'Iran', 'Saudi Arabia', 'Neutral'], f.name)
             f.save()
             #import pdb; pdb.set_trace();
             #Saves game name in temporary variable
@@ -156,19 +180,24 @@ def new_game(request):
                 #add_neutral(temp)
             #else:
             add_neutral(temp)
+            temp.online = online
+            temp.save()
             #import pdb; pdb.set_trace();
             if temp.num_players == temp.curr_num_players and temp.num_players < 5 and temp.num_players != -1:
                 #temp.GameEngine.start_capital(temp)
                 #temp.GameEngine.run_start_trade(temp)
                 temp.save()
             messages.success(request, f'New Game created!')
-            return redirect('app-game', g=temp.name, player=curr_player.name)
+            if online:
+                return redirect('loading_screen', game=temp.name, player=curr_player.name)
+            else:
+                return redirect('app-game', g=temp.name, player=curr_player.name)
             #return redirect('app-runnextscreen', g=temp.name, player=curr_player.name)
         else:
             messages.warning(request, f'Choose another name. An existing game already has this name.')
             return redirect('app-new_game')
     else:
-        form = NewGameForm(instance=request.user)
+        form = NewGameForm(instance=request.user, prefix=game)
         player_form = JoinGameForm(instance=request.user)
     #import pdb; pdb.set_trace()
     context = {
@@ -204,7 +233,24 @@ def runNext2(request, g):
 @login_required
 def runNext3(request, g):
     temp = Game.objects.filter(name=g)[0]
-    temp.GameEngine.run_start_trade(temp, 3)
+    #temp.GameEngine.run_start_trade(temp, 3)
+    #temp.GameEngine.run_engine(temp)
+    headers = {
+                "Content-Type": "application/json"
+    }
+    url = "https://fgpbj614t7.execute-api.us-east-2.amazonaws.com/dev/econhelper?transactionId=124&newGame=False&gameName="+temp.name+"&runEngine=False&years_run=1&num_players=1"
+    header = {}
+    data = requests.get(url, headers=header).json()
+    #import pdb; pdb.set_trace()
+    myGame = temp.GameEngine.create_objects_from_dict(data)['newObject']
+    temp.GameEngine.EconEngines = myGame.EconEngines
+    temp.GameEngine.TradeEngine = myGame.TradeEngine
+    temp.GameEngine.TradeEngine.CountryList = myGame.EconEngines
+    if temp.GameEngine.EconEngines[0].time > 5:
+        all_players = Player.objects.filter(game=temp)
+        temp.GameEngine.set_vars(temp, all_players, False)
+    temp.game_started = True
+    temp.load_complete = True
     temp.save()
 
 @login_required
@@ -217,9 +263,9 @@ def joinGame(request, g):
     if len(p) > 0:
         if len(p) > 1:
             p = Player.objects.filter(user=request.user, game=temp, robot=False)
-            return redirect('app-game', g=temp.name, player=temp.name)
+            return redirect('app-game', g=temp.name, player=p[0].name)
         if temp.num_players == 1: 
-            return redirect('app-game', g=temp.name, player=temp.name)
+            return redirect('app-game', g=temp.name, player=p[0].name)
         else:
             return redirect('app-game', g=temp.name, player=p[0].name)
     if request.method == 'POST':
@@ -343,12 +389,12 @@ def game(request, g, player):
     neutral_player2.ready = True
     neutral_player2.save()
     def create_revenue_pie(country, player):
-        data2 = {'Source':[country.IncomeTaxArray[-2], country.CorporateTaxArray[-2], country.TarriffCollectionArray[-2], country.Government_Savings*country.interest_rate],
+        data2 = {'Source':[country.IncomeTaxArray[-2], country.CorporateTaxArray[-2], country.TarriffCollectionArray[-2], float(country.Government_Savings)*country.interest_rate],
         'Categories':['Income Tax','Corporate Tax','Tariffs','Interest']} 
         fig = px.pie(data2, values='Source', names='Categories', title="Revenues")
         fig.write_html("templates/App/graphs/"+player.name+"revenue.html")
     def create_expenditure_pie(country, player):
-        data2 = {'Expenditure':[country.EducationArray[-2], country.MilitaryArr[-2], country.GovWelfareArray[-2], country.ScienceBudgetArr[-2], country.InfrastructureArr[-2], country.SubsidyArr[-2], country.Government_Savings*country.interest_rate],
+        data2 = {'Expenditure':[country.EducationArray[-2], country.MilitaryArr[-2], country.GovWelfareArray[-2], country.ScienceBudgetArr[-2], country.InfrastructureArr[-2], country.SubsidyArr[-2], float(country.Government_Savings)*country.interest_rate],
         'Categories':['Education','Military','Welfare','Science','Infrastructure','Subsidies','Interest']}
         fig = px.pie(data2, values='Expenditure', names='Categories', title="Expenditures")
         fig.write_html("templates/App/graphs/"+player.name+"expenditure.html")
@@ -408,10 +454,14 @@ def game(request, g, player):
                     #for i in range(0,g.years_per_turn - 1):
                     g.GameEngine.run_engine(g, True, g.years_per_turn)
                     #temp = g.GameEngine.run_engine(g)
+                    g.load_complete = False
                     g.save()
                     #g.GameEngine = temp[0]
                     messages.success(request, f'Turn succesfully run!')
-                    return redirect('app-game', g=g.name, player=str(player))
+                    if g.online:
+                        return redirect('loading_screen', game=g.name, player=str(player))
+                    else:
+                        return redirect('app-game', g=g.name, player=str(player))
     #Creates the tariff formset and titles for it.
     IndFormSet = modelformset_factory(IndTariff, fields=['tariffAm','sanctionAm','moneySend','militarySend','nationalization'], extra=0)
     ProductFormSet = modelformset_factory(Product, fields=['exportRestriction','subsidy'], extra=0)
@@ -445,12 +495,24 @@ def game(request, g, player):
         pass
         #projection(gtemp, ptemp, context, False)
     #import pdb; pdb.set_trace();
-    govDebt = round(player.get_country().Government_SavingsArray[-1]/player.get_country().GDP[-1], 2)
     country = player.get_country()
-    #import pdb;
-    #pdb.set_trace()
-    govRevenue = round(sum((country.IncomeTaxArray[-2], country.CorporateTaxArray[-2], country.TarriffCollectionArray[-2], country.Government_Savings*country.interest_rate)))
-    govSpend = round(sum([country.EducationArray[-2], country.MilitaryArr[-2], country.GovWelfareArray[-2], country.ScienceBudgetArr[-2], country.InfrastructureArr[-2], country.SubsidyArr[-2]])/country.GDP[-1],2)
+    if not math.isnan(country.IncomeTaxArray[-2]):
+        govRevenue = round(sum((country.IncomeTaxArray[-2], country.CorporateTaxArray[-2], country.TarriffCollectionArray[-2], float(country.Government_Savings)*country.interest_rate)))
+    else:
+        govRevenue = 0.1
+
+    if country.GDP[-1] > 0:
+        govSpend = round(sum([country.EducationArray[-2], country.MilitaryArr[-2], country.GovWelfareArray[-2], country.ScienceBudgetArr[-2], country.InfrastructureArr[-2], country.SubsidyArr[-2]])/country.GDP[-1],2)
+        govRevenueGDP = round(govRevenue/country.GDP[-1],2)
+        govDebt = round(player.get_country().Government_SavingsArray[-1]/player.get_country().GDP[-1], 2)
+        govBalance = round(govRevenue/country.GDP[-1] - govSpend,2)
+    else:
+        #Notification.objects.create(game=g, message=player.country+" has been defeated.",year=turn)
+        messages.warning(request, f'Your country has been defeated or been bankrupted!')
+        govSpend = round(sum([country.EducationArray[-2], country.MilitaryArr[-2], country.GovWelfareArray[-2], country.ScienceBudgetArr[-2], country.InfrastructureArr[-2], country.SubsidyArr[-2]]),2)
+        govRevenueGDP = round(govRevenue,2)
+        govDebt = round(player.get_country().Government_SavingsArray[-1], 2)
+        govBalance = round(govRevenue - govSpend,2)
     context.update({
         'country': player.country,
         'indForms': IFS,
@@ -471,9 +533,9 @@ def game(request, g, player):
         'govRevenue':"App/graphs/"+player.name+"revenue.html",
         'BudgetGraph':"App/graphs/"+player.name+"budgetgraph.html",
         'CurrentYear':player.get_country().time - 6,
-        'govRevenueGDP':round(govRevenue/country.GDP[-1],2),
+        'govRevenueGDP': govRevenueGDP,
         'govSpending':govSpend,#round((player.ScienceInvest + player.InfrastructureInvest + player.Welfare + player.AdditionalWelfare + player.Education + player.Military)*100, 4),
-        'govBalance': round(govRevenue/country.GDP[-1] - govSpend,2),#round((country.deficits[-1]/country.GDP[-1]), 2),
+        'govBalance': govBalance,#round((country.deficits[-1]/country.GDP[-1]), 2),
         'notifications': Notification.objects.filter(game=g, year__gt=player.get_country().time - 5)[::-1],
     })
     return render(request, 'App/game.html', context)
@@ -508,7 +570,17 @@ def map(request, g, p, l, lprev):
     #import pdb; pdb.set_trace()
     t = MapInterface.objects.filter(game=g,controller=p)[0]
     if request.method == 'POST':
-        if 'mode' in request.POST:
+        if 'specialty' in request.POST:
+            if l != 'null':
+                hexForm = UniversityForm(request.POST, instance=Hexes.objects.filter(game=g, hexNum=l)[0])
+                if hexForm.is_valid():
+                    hexForm.save()
+                    return redirect('map', gtemp, ptemp, 'null', 'null')
+            else:
+                messages.warning(request, f'No hex selected (should be bolded on map when selected)!')
+                return redirect('map', gtemp, ptemp, 'null', 'null')
+
+        elif 'mode' in request.POST:
             mi2 = MapInterfaceForm(request.POST, instance=t)
             if mi2.is_valid():
                 mi2.save()
@@ -681,11 +753,14 @@ def map(request, g, p, l, lprev):
     random_index = -1
     if l == 'null':
         f = ArmyForm()
+        hexForm = UniversityForm(instance=Hexes.objects.filter(game=g, hexNum=0)[0])
+        #hexForm = hexForm.save()
     else:
         #If a tiles has been selected, load that particular army if an army is on it, 
         #if not then load a basic Army form with that location defaulted into the form.
         h = Hexes.objects.filter(game=g, hexNum=l)[0]
         v = Army.objects.filter(game=g,location=h, controller=player)
+        hexForm = UniversityForm(instance=h)
         if not v:
             if h.controller != player:
                 messages.warning(request, f'You cannot build an army in another players territory!')
@@ -708,6 +783,7 @@ def map(request, g, p, l, lprev):
         'country': player.country,
         'MilitaryAm':p.get_country().Military,
         'ColorMap':json_list,
+        'hexForm':hexForm,
         'hi':'hello',
         'info':info_list,
         'CurrentYear':player.get_country().time - 6,
@@ -894,19 +970,44 @@ def gamegraph(g, p, context, graphmode, game):
     #import pdb; pdb.set_trace()
     #Local country graphs
     create_compare_graph(graphmode.mode, graphmode.get_mode_display(), g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict, game.GameEngine, False)
+
+
+    #create_compare_graph("ScienceArr", "Science", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
+    """create_compare_graph("UnemploymentArr", "Unemployment", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("GDPGrowth", "GDP_Growth", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("GDP", "GDP", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("InterestRate", "Interest_Rate", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("PopulationArr", "Population", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("GDPPerCapita", "Real_GDP_Per_Capita", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("CapitalArr", "Capital", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("CapitalPerPerson", "Capital_Per_Person", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("EmploymentRate", "Employment_Rate", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("InflationTracker", "Inflation", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("ResentmentArr", "Resentment", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("Happiness", "Happiness", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("EducationArr2", "Education", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("InfrastructureArray", "Infrastructure", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("trade_balance_history", "TradeBalance", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict) 
+    create_compare_graph("ConsumptionArr2", "Consumption_Per_Capita", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("Bankruptcies", "Bankruptcies", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("gini", "gini", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    #import pdb; pdb.set_trace()
+    #Local country graphs
+    create_compare_graph(graphmode.mode, graphmode.get_mode_display(), g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict, game.GameEngine, False)"""
     market_list = p.get_country().markets
-    create_compare_graph("unemployment", "Domestic_Unemployment", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("output_growth", "Domestic_GDP_Growth", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("output", "Domestic_GDP", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("output_per_capita", "Domestic_GDP_Per_Capita", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("inflation", "Domestic_Inflation", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("cpi", "Domestic_GDP_Deflator", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("EducationArr2", "Domestic_Education", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("Resentment", "Domestic_Resentment", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("happiness", "Domestic_Happiness", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("gini", "Domestic_gini", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("CapitalArr", "Domestic_Capital", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
-    create_compare_graph("CapitalPerPerson", "Domestic_Capital_Per_Person", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+    if len(market_list) > 0:
+        create_compare_graph("unemployment", "Domestic_Unemployment", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("output_growth", "Domestic_GDP_Growth", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("output", "Domestic_GDP", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("output_per_capita", "Domestic_GDP_Per_Capita", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("inflation", "Domestic_Inflation", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("cpi", "Domestic_GDP_Deflator", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("EducationArr2", "Domestic_Education", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("Resentment", "Domestic_Resentment", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("happiness", "Domestic_Happiness", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("gini", "Domestic_gini", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("CapitalArr", "Domestic_Capital", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("CapitalPerPerson", "Domestic_Capital_Per_Person", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
 
     context.update({
         'GoodsPerCapita':g.GoodsPerCapita,
@@ -1179,10 +1280,10 @@ def Politics(request, g, p):
 def delete(request, g, p):
     import os
     g = Game.objects.filter(name=g)[0]
-
+    online = True
     """snapshot = tracemalloc.take_snapshot()
     top_stats = snapshot.statistics("lineno")
-
+    
     for stat in top_stats[:10]:
         print(stat)"""
     context = {
@@ -1207,6 +1308,12 @@ def delete(request, g, p):
             return render(request, 'App/home.html', context)
     except:
         g.delete()
+    if online:
+        headers = {
+                "Content-Type": "application/json"
+        }
+        api_url = "https://fgpbj614t7.execute-api.us-east-2.amazonaws.com/dev/econhelper?transactionId=124&newGame=delete&gameName="+g.name+"&runEngine=False&years_run=1&num_players=1"
+        requests.get(api_url, headers=headers).json()
     messages.success(request, f'Deletion of game was successfull!')
     return render(request, 'App/home.html', context)
 
