@@ -137,8 +137,8 @@ def new_game(request):
                 i.controller = curr_player
                 i.save()
             #Creates Policies
-            p2 = PolicyList()
-            p2.add_policies(curr_player, temp, request)
+            #p2 = PolicyList()
+            #p2.add_policies(curr_player, temp, request)
             #Creates tariff form associated with user.
             formt = AddTariffForm(request.POST)
             formt = formt.save(commit=False)
@@ -299,8 +299,8 @@ def joinGame(request, g):
             GraphInterface.objects.create(game=temp,controller=curr_player)
             GraphCountryInterface.objects.create(game=temp,controller=curr_player, country=curr_player.country)
             #Creates Policies
-            p2 = PolicyList()
-            p2.add_policies(curr_player, temp, request)
+            #p2 = PolicyList()
+            #p2.add_policies(curr_player, temp, request)
             #Adds control to related hexes
             hex_list = Hexes.objects.filter(game=temp, start_country=curr_player.country)
             for i in hex_list:
