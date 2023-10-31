@@ -91,6 +91,7 @@ def new_game(request):
             #Creates the game object
             f = form.save(commit=False)
             f.host = request.user
+            f.online = True
             if f.num_players <= 5 and f.num_players != -1:
                 if pf.country.large:
                     messages.warning(request, f'Choose another country. This country is not available for the 5 person map.')
