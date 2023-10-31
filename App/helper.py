@@ -110,8 +110,8 @@ def add_neutral(temp):
     MapInterface.objects.create(game=temp,controller=curr_player)
     GraphInterface.objects.create(game=temp,controller=curr_player)
     #Creates Policies
-    p2 = PolicyList()
-    p2.add_policies(curr_player, temp)
+    #p2 = PolicyList()
+    #p2.add_policies(curr_player, temp)
     #Adds control to related hexes
     """hex_list = Hexes.objects.filter(game=temp, start_country=curr_player.country)
     for i in hex_list:
