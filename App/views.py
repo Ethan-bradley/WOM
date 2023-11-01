@@ -457,6 +457,7 @@ def game(request, g, player):
                     g.load_complete = False
                     g.save()
                     #g.GameEngine = temp[0]
+                    print("Turn run successfully")
                     messages.success(request, f'Turn succesfully run!')
                     if g.online:
                         return redirect('loading_screen', game=g.name, player=str(player))
