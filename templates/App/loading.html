@@ -1,0 +1,82 @@
+{% extends "App/base.html" %}
+{% block content %}
+<head>
+    <style>
+    /* Style for the loading bar */
+    .loading-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    /* Style for the loading bar */
+    #loading-bar {
+      width: 100%;
+      height: 10px;
+      background-color: #007bff;
+    }
+
+    /* Style for the loading text */
+    #loading-text {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<div class="loading-container">
+    <div id="loading-percent">0%</div>
+    <div id="loading-bar"></div>
+    <div id="loading-text">Loading... Please Wait</div>
+  </div>
+{% endblock content %}
+{% block extra_js %}
+<script>
+        function checkForUpdate() {
+            // Make an AJAX request to the server to check if the task is complete.
+            // If the task is complete, redirect to the result page.
+            // Otherwise, keep checking.
+            setTimeout(function () {
+                // Check the task status via an API endpoint
+                fetch("{% url 'check_status' game=game %}")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.task_complete) {
+                            window.location.href = "{% url 'app-game' g=game player=player %}";
+                        } else {
+                            checkForUpdate();
+                        }
+                    });
+            }, 2000);  // Check every 2 seconds (adjust as needed)
+        }
+        let loading_am = 3000
+        {% if game_started %}
+            loading_am = 200
+        {% endif %}
+
+        function moveLoadingBar() {
+          const loadingBar = document.getElementById('loading-bar');
+          const loadingPercent = document.getElementById('loading-percent');
+          let width = 0;
+          const increment = 1;
+
+          function frame() {
+            if (width >= 99) {
+              clearInterval(id);
+              // Loading complete, you can redirect or hide the loading screen here.
+            } else {
+              width += increment;
+              loadingBar.style.width = width + '%';
+              loadingPercent.innerText = width + '%';
+            }
+          }
+
+          const id = setInterval(frame, loading_am); // Move 10% every 8 seconds (8000 milliseconds).
+        }
+
+        moveLoadingBar();
+        
+        window.onload = checkForUpdate;
+    </script>
+{% endblock extra_js %}
