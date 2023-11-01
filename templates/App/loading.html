@@ -48,11 +48,11 @@
                             checkForUpdate();
                         }
                     });
-            }, 2000);  // Check every 2 seconds (adjust as needed)
+            }, 3000);  // Check every 2 seconds (adjust as needed)
         }
-        let loading_am = 3000
+        let loading_am = 2400
         {% if game_started %}
-            loading_am = 200
+            loading_am = 100
         {% endif %}
 
         function moveLoadingBar() {

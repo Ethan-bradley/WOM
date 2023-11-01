@@ -25,6 +25,7 @@ import math
 import random
 import requests
 from django.http import JsonResponse
+from .EconHelper import trade_diagram
 #import django_rq
 #from rq import Queue
 #from worker import conn
@@ -252,6 +253,7 @@ def runNext3(request, g):
     temp.game_started = True
     temp.load_complete = True
     temp.save()
+    trade_diagram(myGame.TradeEngine.CountryNameList, myGame.TradeEngine.trade_balance, "trade")
 
 @login_required
 def joinGame(request, g):
@@ -428,8 +430,8 @@ def game(request, g, player):
             if govForm2.is_valid():
                 govForm2.save()
                 #projection(gtemp, ptemp, context)
-                player.projection_unloaded = False
-                player.save()
+                #player.projection_unloaded = False
+                #player.save()
             else:
                 messages.warning(request, f'Error in Government Form')
                 messages.warning(request, govForm2.errors)
@@ -451,12 +453,9 @@ def game(request, g, player):
                     if not player.ready:
                         ready_next_round = False
                 if ready_next_round:
-                    #for i in range(0,g.years_per_turn - 1):
                     g.GameEngine.run_engine(g, True, g.years_per_turn)
-                    #temp = g.GameEngine.run_engine(g)
                     g.load_complete = False
                     g.save()
-                    #g.GameEngine = temp[0]
                     print("Turn run successfully")
                     messages.success(request, f'Turn succesfully run!')
                     if g.online:

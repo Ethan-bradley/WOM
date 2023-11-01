@@ -188,7 +188,7 @@ class GameEngine():
 		#index = self.nameList.index(p.country.name)
 		#country = self.get_country(index)
 		#self.apply_hex_number(g, p, country)
-		if graphs:
+		if graphs and not online:
 			trade_diagram(self.CountryNameList, self.TradeEngine.trade_balance, "trade")
 			#self.create_graphs(g, all_players)
 			#self.create_compare_graph(self.EconEngines, self.nameList, 17, ['GoodsPerCapita','InflationTracker','ResentmentArr','EmploymentRate','ConsumptionArr','InterestRate','GoodsBalance','ScienceArr'],'',g.name, g)
