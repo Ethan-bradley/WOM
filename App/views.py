@@ -92,7 +92,14 @@ def new_game(request):
             #Creates the game object
             f = form.save(commit=False)
             f.host = request.user
-            f.online = True
+            f.online = online
+            #Check for duplicate name
+            game_list = Game.objects.all()
+            #import pdb; pdb.set_trace()
+            for g in game_list:
+                if g.name == f.name:
+                    messages.warning(request, f'Choose another name. An existing game already has this name.')
+                    return render(request, 'App/new_game.html', {'form' : form, 'player_form': player_form})
             if f.num_players <= 5 and f.num_players != -1:
                 if pf.country.large:
                     messages.warning(request, f'Choose another country. This country is not available for the 5 person map.')
@@ -197,7 +204,7 @@ def new_game(request):
             #return redirect('app-runnextscreen', g=temp.name, player=curr_player.name)
         else:
             messages.warning(request, f'Choose another name. An existing game already has this name.')
-            return redirect('app-new_game')
+            return render(request, 'App/new_game.html', {'form' : form, 'player_form': player_form})
     else:
         form = NewGameForm(instance=request.user, prefix=game)
         player_form = JoinGameForm(instance=request.user)

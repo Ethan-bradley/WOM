@@ -10,14 +10,15 @@ class NewGameForm(ModelForm):
         model = Game
         fields = ['name','num_players','years_per_turn']
 
-    def clean(self):
-        super(NewGameForm, self).clean()
-        n = self.cleaned_data.get('name')
-        game_list = Game.objects.all()
-        for g in game_list:
-            if g.name == n:
-                self._errors['name'] = self.error_class(['Choose another name. A game already has this name.'])
-        return self.cleaned_data
+    #def clean(self):
+        #super(NewGameForm, self).clean()
+        #name = self.cleaned_data.get('name')
+        #game_list = Game.objects.all()
+        #import pdb; pdb.set_trace()
+        #for g in game_list:
+        #if g.name == name:
+        #self._errors['name'] = self.error_class(['Choose another name. A game already has this name.'])
+        #return self.cleaned_data
 
 class JoinGameForm(ModelForm):
     """def __init__(game, *args, **kwargs):

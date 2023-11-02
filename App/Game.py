@@ -433,7 +433,8 @@ class GameEngine():
 		hex_list = Hexes.objects.filter(game=g, water=False)
 		num_rebelled = 0
 		for h in range(0, len(hex_list)):
-			market = self.TradeEngine.market_list[self.TradeEngine.location_names.index(hex_list[h].name)]
+			market_index = self.TradeEngine.location_names.index(hex_list[h].name)
+			market = self.TradeEngine.market_list[market_index]
 			market.universityLevel = 20*pow(2, hex_list[h].university_level - 1)
 			if hex_list[h].specialty != 'None':
 				market.specialty = hex_list[h].specialty
