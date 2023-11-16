@@ -27,7 +27,7 @@ class CustomObject:
 
 class GameEngine():
 	def __init__(self, num_players, nameListInput, gameName):
-		online = False
+		online = True
 		self.nameList = nameListInput
 		self.EconEngines = []
 		CountryList = nameListInput#['Neutral','Spain','UK','France','Germany','Italy']

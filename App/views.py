@@ -98,7 +98,7 @@ def get_trade_graph(request, game, player):
 
 @login_required
 def new_game(request):
-    online = False
+    online = True
     #tracemalloc.start()
     if request.method == 'POST':
         form = NewGameForm(request.POST, prefix=game)
