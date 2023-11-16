@@ -80,9 +80,25 @@ def check_task_status(request, game):
 
     return JsonResponse(task_status)
 
+def get_trade_graph(request, game, player):
+    game_obj = Game.objects.filter(name=game)[0]
+    myGame = game_obj.GameEngine
+    #import pdb; pdb.set_trace()
+    selected_option = json.loads(request.body)['selected_option']
+    trade_diagram(myGame.TradeEngine.CountryNameList, myGame.TradeEngine.good_balance[myGame.TradeEngine.good_names.index(selected_option)], "trade"+game+player)
+
+    task_status = {
+        "task_complete": True,
+        "graph_link": "App/trade"+game+player+".html",  # Trade html link
+        "error_message": None  # Error message (if an error occurred).
+    }
+    return render(request, "App/trade"+game+player+".html")
+
+    #return JsonResponse(task_status)
+
 @login_required
 def new_game(request):
-    online = True
+    online = False
     #tracemalloc.start()
     if request.method == 'POST':
         form = NewGameForm(request.POST, prefix=game)
@@ -555,6 +571,7 @@ def fixVars(request, g):
     g = Game.objects.filter(name=g)[0]
     g.GameEngine.fix_variables()
     g.save()
+
 #loads the army map
 @login_required
 def map(request, g, p, l, lprev):
@@ -1287,7 +1304,7 @@ def Politics(request, g, p):
 def delete(request, g, p):
     import os
     g = Game.objects.filter(name=g)[0]
-    online = True
+    online = g.online
     """snapshot = tracemalloc.take_snapshot()
     top_stats = snapshot.statistics("lineno")
     

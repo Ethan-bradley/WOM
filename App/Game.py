@@ -27,7 +27,7 @@ class CustomObject:
 
 class GameEngine():
 	def __init__(self, num_players, nameListInput, gameName):
-		online = True
+		online = False
 		self.nameList = nameListInput
 		self.EconEngines = []
 		CountryList = nameListInput#['Neutral','Spain','UK','France','Germany','Italy']
@@ -35,7 +35,7 @@ class GameEngine():
 		self.nameList = CountryList
 		self.gameName = gameName
 		if not online:
-			good_names = ['Deposits','Loans','UnskilledLabour','Engineer','Miner','Farmer','Metallurgist','Teacher','Doctor','Physicist','Education','Food','Clothes','Services','Housing','Construction','Healthcare','Military','MedicalEquipment','Steel','Crops','Iron','Coal','Oil','Transport','Machinery']+CountryList+['Money']
+			good_names = ['Deposits','Loans','UnskilledLabour','Farmer','Teacher','Miner','Doctor','Engineer','Metallurgist','Physicist','Education','Food','Clothes','Services','Housing','Construction','Healthcare','Military','MedicalEquipment','Steel','Crops','Iron','Coal','Oil','Transport','Machinery']+CountryList+['Money']
 			good_types = ['Consumer','Loans','Labour',        'Labour',  'Labour', 'Labour',      'Labour','Labour','Labour','Labour',     'Consumer','Consumer','Consumer','Consumer','Consumer','Capital','Consumer','Other',    'Capital','Capital','Raw','Raw','Raw','Raw',           'Transport','Capital']+['ForeignCurrency' for i in range(len(CountryList))]+['Money']
 			industry_types = ['Deposits','Loans','Labour',    'Labour',       'Labour', 'Labour',  'Labour','Labour','Labour','Labour', 'Education','Food',    'Food','Services','Construction','Construction','Health','Military','HealthEquipment','Steel','Agriculture','Iron','Coal','Oil','Transport','Machinery']+['ForeignCurrency' for i in range(len(CountryList))]+['Money']
 			transportable_indexes = [11,12,17,18,19,20,21,22,23,25,len(good_names)-1]
@@ -44,19 +44,19 @@ class GameEngine():
 
 			industry_types2 = ['Deposits','Loans','Labour',    'Labour',       'Labour', 'Labour',  'Labour','Labour','Labour','Labour', 'Education','Food',    'Food','Services','Construction','Construction','Health','Military','HealthEquipment','Steel','Agriculture','Iron','Coal','Oil','Transport','Machinery']+['ForeignCurrency' for i in range(len(CountryList))]+['Chemistry','Physics','Biology','Money']
 			industry_value_dict = {
-			    'Agriculture':[['Machinery',0.4], ['Farmer',0.2], ['Oil', 0.2], ['Doctor', 0.0]],
-			    'Food':[['Construction', 0.2],['Machinery',0.3], ['Crops',0.3], ['UnskilledLabour',0.2], ['Engineer', 0.0]],
-			    'Manufacturing':[['Machinery',0.35], ['Construction',0.1], ['Steel',0.15],['UnskilledLabour',0.45], ['Engineer', 0.0]],
+			    'Agriculture':[['Machinery',0.4], ['Farmer',0.2], ['Oil', 0.2]],
+			    'Food':[['Construction', 0.2],['Machinery',0.3], ['Crops',0.3], ['UnskilledLabour',0.2]],
+			    'Manufacturing':[['Machinery',0.35], ['Construction',0.1], ['Steel',0.15],['UnskilledLabour',0.45]],
 			    'Military':[['Machinery',0.15], ['Construction',0.1], ['Steel',0.1], ['Oil',0.1], ['Metallurgist',0.2], ['Engineer',0.35]],
-			    'Steel':[['Machinery',0.4], ['Iron',0.1],['Coal',0.1],['Metallurgist',0.45]],
+			    'Steel':[['Machinery',0.4], ['Iron',0.1],['Coal',0.1],['Metallurgist',0.4]],
 			    'Services': [['Machinery',0.5], ['Oil',0.1], ['UnskilledLabour',0.4]],
 			    'Health':[['MedicalEquipment',0.3], ['Construction',0.1], ['UnskilledLabour',0.1], ['Doctor',0.5]],
 			    'HealthEquipment':[['Machinery',0.3],['Engineer',0.6]],
-			    'Mining':[['Machinery',0.6], ['Miner',0.2],['Engineer',0.0]],
-			    'Oil':[['Machinery',0.6], ['Miner',0.2],['Engineer',0.0]],
-			    'Iron':[['Machinery',0.4], ['Oil', 0.2], ['Miner',0.2],['Engineer',0.0]],
-			    'Coal':[['Machinery',0.4], ['Oil', 0.2], ['Miner',0.2],['Engineer',0.0]],
-			    'Transport':[['Construction',0.33],['Oil',0.3], ['UnskilledLabour',0.37],['Engineer',0.0]],
+			    'Mining':[['Machinery',0.6], ['Miner',0.2]],
+			    'Oil':[['Machinery',0.7], ['Miner',0.3]],
+			    'Iron':[['Machinery',0.7], ['Miner',0.3]],
+			    'Coal':[['Machinery',0.7], ['Miner',0.3]],
+			    'Transport':[['Construction',0.33],['Oil',0.3], ['UnskilledLabour',0.37]],
 			    'Construction':[['Machinery',0.3], ['Oil', 0.1], ['UnskilledLabour',0.2], ['Engineer',0.4]],
 			    'Machinery':[['Machinery',0.4], ['Steel',0.1], ['Metallurgist',0.2], ['Engineer',0.3]],
 			    'Deposits':[['Loans',0.4],['Construction',0.2]] + [[i,(1/len(CountryList))*0.2] for i in CountryList] + [['Engineer',0.2]],
@@ -125,7 +125,7 @@ class GameEngine():
 			self.start_hex_number(g, p, country)
 
 	def run_engine(self, g, graphs=True, years_run=1, projection=False):
-		online = True
+		online = g.online
 		all_players = Player.objects.filter(game=g)
 		# Define the headers, including "Content-Type" as "application/json"
 		headers = {
@@ -174,7 +174,6 @@ class GameEngine():
 			responseObject = {}
 			json_payload = manager_to_json(self.TradeEngine)
 			json_payload = json.dumps(json_payload)
-			#import pdb; pdb.set_trace()
 			# Send the POST request with the JSON body
 			api_url = "https://fgpbj614t7.execute-api.us-east-2.amazonaws.com/dev/econhelper?transactionId=124&newGame=False&gameName="+self.gameName+"&runEngine=True&years_run=1&num_players=1"
 			requests.post(api_url, data=json_payload, headers=headers).json()
@@ -791,7 +790,12 @@ def to_json(self):
     # Convert list attributes to JSON while ignoring non-list attributes.
     json_data = {}
     variable_list = ['IncomeTax', 'CorporateTax', 'interest_rate', 'deposit_rate', 'GovWelfare', 'InfrastructureInvest', 'ResearchSpend']
-    for attr_name, attr_value in self.__dict__.items():
+    self_dict = self.__dict__
+    for attr_name in variable_list:
+    	if not isinstance(self_dict[attr_name], list):
+    		json_data[attr_name] = self_dict[attr_name]
+    json_data['subsidies'] = self_dict["subsidies"]
+    """for attr_name, attr_value in self.__dict__.items():
         if isinstance(attr_value, list):
             if len(attr_value) > 0:
                     #elif type(attr_value[0]) == int or type(attr_value[0]) == float:
@@ -802,12 +806,22 @@ def to_json(self):
                 #else:
                 #json_data[attr_name] = str(attr_value)
         elif (attr_name in variable_list):
-            json_data[attr_name] = attr_value
+            json_data[attr_name] = attr_value"""
+    return json_data
+
+def market_to_json(self):
+    # Convert list attributes to JSON while ignoring non-list attributes.
+    json_data = {}
+    variable_list = ['specialty', 'universityLevel']
+    self_dict = self.__dict__
+    for attr_name in variable_list:
+    	json_data[attr_name] = self_dict[attr_name]
     return json_data
 
 def manager_to_json(self):
     # Convert list attributes to JSON while ignoring non-list attributes.
     json_data = {}
+    #variable_list = ['hex_switches', 'investment_restrictions', 'Tariffs', 'Sanctions', 'restrictions']
     for attr_name, attr_value in self.__dict__.items():
         if attr_name == "market_dict":
                 continue
@@ -817,6 +831,8 @@ def manager_to_json(self):
                     json_data[attr_name] = [to_json(item) for item in attr_value]
                     #json_data[attr_name] = [to_json(item) for item in attr_value]
                     #elif type(attr_value[0]) == int or type(attr_value[0]) == float:
+                elif attr_name == 'market_list':
+                	json_data[attr_name] = [market_to_json(item) for item in attr_value]
                 elif not hasattr(attr_value[0], '__dict__') and (attr_name == 'hex_switches' or attr_name == 'investment_restrictions' or attr_name == 'Tariffs' or attr_name == 'Sanctions' or attr_name == 'restrictions'):
                     json_data[attr_name] = attr_value
             else:

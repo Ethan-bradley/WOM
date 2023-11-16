@@ -31,6 +31,7 @@ urlpatterns = [
     path('fixVars/<str:g>', views.fixVars, name='app-run-fix-vars'),
     path('loading/<str:game>/<str:player>', views.loading_screen, name='loading_screen'),
     path('check_status/<str:game>', views.check_task_status, name='check_status'),
+    path('get_trade_graph/<str:game>/<str:player>', views.get_trade_graph, name='get_trade_graph'),    
 ] + static(settings.STATIC_URL,document_root = settings.STATIC_ROOT)
 
 # For Django >= 2.0

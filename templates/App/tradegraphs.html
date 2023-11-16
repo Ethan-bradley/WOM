@@ -5,6 +5,24 @@
     <div class="media-body">
       <legend class="border-bottom mb-4">{{ country }}</legend>
       <h2 class="account-heading">Country Trade Graphs</h2>
+      <p class="text-secondary"> Trade Flow graph for different resources. </p>
+      {% include 'App/tradetestgameLouis.html' %}
+    <!-- HTML Template -->
+    <select id="optionDropdown">
+        <option value="Iron">Iron</option>
+        <option value="Coal">Coal</option>
+         <option value="Food">Food</option>
+          <option value="Clothes">Clothes</option>
+           <option value="Military">Military</option>
+            <option value="MedicalEquipment">MedicalEquipment</option>
+             <option value="Steel">Steel</option>
+              <option value="Crops">Crops</option>
+               <option value="Oil">Oil</option>
+                <option value="Machinery">Machinery</option>
+        <!-- Add more options as needed -->
+    </select>
+    <br>
+    <h2 class="account-heading">Tariff graphs</h2>
       <p class="text-secondary">Graphs show the rates that are being placed on you by the countries in the legend. <span style="float:right;" data-toggle="tooltip" title="We also show you the tariffs and other economic foreign policies other country have on a country. You can choose which country to look at with the same selector from the Country-Based Debt and Budget Graph.">ℹ️ </span></p>
 
           {% for name in graphs %}
@@ -52,6 +70,12 @@
     {% include 'App/trade.html' %}
     <span style="float:right;" data-toggle="tooltip" title="Here you can see the exchange rates of each country, relative to a fictional country outside of the map. To figure out how many British Pounds you can get per German Mark, simply divide how many $ you can get per German Mark (that's the value that's shown on the graph) , and divide it by how many $ it takes to buy one British Pound.">ℹ️ </span>
     <br>
+
+    <div id="dataContainer">
+        <!-- Data will be displayed here -->
+    </div>
+
+
     {% include 'App/exchange.html' %}
     <span style="float:right;" data-toggle="tooltip" title="While the Foreign Investment Abroad graph shows you where your citizens' have invested the money they've invested outside of your borders, they have invested in which country. Foreign Investment Domestic shows you which foreign countries have invested how much in your borders.">ℹ️ </span>
     <br>
@@ -170,5 +194,44 @@ window.onload = function() {
     $(function () {
   $('[data-toggle="tooltip"]').tooltip()
 })
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+$(document).ready(function () {
+    $('#optionDropdown').change(function () {
+        var selectedOption = $(this).val();
+        const data = {
+                selected_option: selectedOption,
+        }
+        fetch("{% url 'get_trade_graph' game=game player=player %}", {
+          method: 'POST',
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.text())
+        .then(htmlContent => {
+            console.log("Got data")
+            location.reload(true);
+        });
+    });
+});
+
 </script>
 {% endblock extra_js %}
