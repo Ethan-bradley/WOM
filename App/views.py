@@ -1190,6 +1190,8 @@ def trade(request, g, p):
             tariff_titles[count] = f.key.country.name+": "+f.key.name
             count += 1
         IFS = IndFormSet(queryset=IndTariff.objects.filter(controller=tar))
+    if not os.path.exists("App/trade"+game+player+".html"):
+        trade_diagram(myGame.TradeEngine.CountryNameList, myGame.TradeEngine.good_balance[myGame.TradeEngine.good_names.index('Coal')], "trade"+game+player)
     context = {
         'indForms': IFS,
         'country': p.country,
