@@ -175,7 +175,7 @@ class GameEngine():
 			json_payload = manager_to_json(self.TradeEngine)
 			json_payload = json.dumps(json_payload)
 			# Send the POST request with the JSON body
-			api_url = "https://fgpbj614t7.execute-api.us-east-2.amazonaws.com/dev/econhelper?transactionId=124&newGame=False&gameName="+self.gameName+"&runEngine=True&years_run=1&num_players=1"
+			api_url = "https://fgpbj614t7.execute-api.us-east-2.amazonaws.com/dev/econhelper?transactionId=124&newGame=False&gameName="+self.gameName+"&runEngine=True&years_run="+str(years_run)+"&num_players=1"
 			requests.post(api_url, data=json_payload, headers=headers).json()
 			#if data['statusCode'] == '200':
 			#myGame = self.create_objects_from_dict(data)['newObject']
