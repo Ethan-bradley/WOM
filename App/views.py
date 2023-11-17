@@ -1325,6 +1325,13 @@ def delete(request, g, p):
                             os.remove(os.path.join("templates/App/graphs", filename))
                         except:
                             print("Error in removing files. File does not exist.")
+            for filename in os.listdir("templates/App"):
+                for p in all_players:
+                    if p.name in filename:
+                        try:
+                            os.remove(os.path.join("templates/App", filename))
+                        except:
+                            print("Error in removing files. File does not exist.")
             g.delete()
         else:
 
