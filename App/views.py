@@ -26,6 +26,7 @@ import random
 import requests
 from django.http import JsonResponse
 from .EconHelper import trade_diagram
+import os
 #import django_rq
 #from rq import Queue
 #from worker import conn
