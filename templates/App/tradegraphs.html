@@ -142,7 +142,8 @@ for (const title of graph_dict['title']) {
   for (var i=0; i < graph_dict['line_titles'][index].length; i++) {
     const temp = {
       label: graph_dict['line_titles'][index][i],
-      data: graph_dict['data'][index][i],
+      data: graph_dict['data'][index]
+      [i],
       fill: false,
       borderColor: graph_dict['colors'][index][i],
       tension: 0.1

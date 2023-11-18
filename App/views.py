@@ -84,7 +84,6 @@ def check_task_status(request, game):
 def get_trade_graph(request, game, player):
     game_obj = Game.objects.filter(name=game)[0]
     myGame = game_obj.GameEngine
-    #import pdb; pdb.set_trace()
     selected_option = json.loads(request.body)['selected_option']
     trade_diagram(myGame.TradeEngine.CountryNameList, myGame.TradeEngine.good_balance[myGame.TradeEngine.good_names.index(selected_option)], "trade"+game+player)
 
@@ -99,7 +98,7 @@ def get_trade_graph(request, game, player):
 
 @login_required
 def new_game(request):
-    online = True
+    online = False
     #tracemalloc.start()
     if request.method == 'POST':
         form = NewGameForm(request.POST, prefix=game)
@@ -973,8 +972,9 @@ def gamegraph(g, p, context, graphmode, game):
     g = Game.objects.filter(name=g)[0]
     p = Player.objects.filter(name=p)[0]
     start = 5
-    #create_compare_graph("ScienceArr", "Science", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, 17,graph_dict)
+    
     create_compare_graph("UnemploymentArr", "Unemployment", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("InflationTracker", "Inflation", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("GDPGrowth", "GDP_Growth", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("GDP", "GDP", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("InterestRate", "Interest_Rate", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
@@ -983,7 +983,7 @@ def gamegraph(g, p, context, graphmode, game):
     create_compare_graph("CapitalArr", "Capital", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("CapitalPerPerson", "Capital_Per_Person", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("EmploymentRate", "Employment_Rate", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
-    create_compare_graph("InflationTracker", "Inflation", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("ScienceArr", "Science", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("ResentmentArr", "Resentment", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("Happiness", "Happiness", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("EducationArr2", "Education", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
@@ -992,6 +992,7 @@ def gamegraph(g, p, context, graphmode, game):
     create_compare_graph("ConsumptionArr2", "Consumption_Per_Capita", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("Bankruptcies", "Bankruptcies", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     create_compare_graph("gini", "gini", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
+    create_compare_graph("trade_share", "trade_share", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
     #import pdb; pdb.set_trace()
     #Local country graphs
     create_compare_graph(graphmode.mode, graphmode.get_mode_display(), g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict, game.GameEngine, False)
@@ -1027,12 +1028,14 @@ def gamegraph(g, p, context, graphmode, game):
         create_compare_graph("output_per_capita", "Domestic_GDP_Per_Capita", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
         create_compare_graph("inflation", "Domestic_Inflation", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
         create_compare_graph("cpi", "Domestic_GDP_Deflator", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("science", "Domestic_Science", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
         create_compare_graph("EducationArr2", "Domestic_Education", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
         create_compare_graph("Resentment", "Domestic_Resentment", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
         create_compare_graph("happiness", "Domestic_Happiness", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
         create_compare_graph("gini", "Domestic_gini", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
         create_compare_graph("CapitalArr", "Domestic_Capital", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
         create_compare_graph("CapitalPerPerson", "Domestic_Capital_Per_Person", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
+        create_compare_graph("trade_share", "Domestic_trade_share", g.GameEngine.TradeEngine, market_list, start,graph_dict, marketattr=True)
 
     context.update({
         'GoodsPerCapita':g.GoodsPerCapita,
@@ -1158,7 +1161,6 @@ def trade(request, g, p):
     #create_trade_rate_graph(g.GameEngine,"SanctionsArr","Sanctions",t.country.name,start)
     #create_trade_rate_graph(g.GameEngine,"ForeignAid","Foreign Aid",t.country.name,start)
     #create_trade_rate_graph(g.GameEngine,"MilitaryAid","Military Aid",t.country.name,start)
-
     create_compare_graph("TarriffsArr", "Tarriffs", g.GameEngine.TradeEngine,t.country.name,start,graph_dict, g.GameEngine)
     create_compare_graph("SanctionsArr","Sanctions", g.GameEngine.TradeEngine,t.country.name,start,graph_dict, g.GameEngine)
     create_compare_graph("ForeignAid","Foreign_Aid", g.GameEngine.TradeEngine,t.country.name,start,graph_dict, g.GameEngine)
@@ -1208,7 +1210,7 @@ def trade(request, g, p):
         'titles':titles,
         'graphs': graph_dict['title'],
         'graph_dict': graph_dict,
-        'labels':[i for i in range(0,len(g.GameEngine.TarriffsArr['UK'])-2)],
+        'labels':[i for i in range(0,len(g.GameEngine.TarriffsArr['UK']['Germany'])-start)],
     }
     reset_queries()
     return render(request, 'App/tradegraphs.html', context)

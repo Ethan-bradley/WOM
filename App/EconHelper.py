@@ -358,7 +358,8 @@ class Corporation(Household):
         #Change this later to actually delete deposits
         bank.deposits = max(bank.deposits - self.goods_supply[len(self.goods_supply)-1], 0)
         self.goods_supply[len(self.goods_supply)-1] = 0
-      
+    if hasattr(self,"extra_stuff"):
+      self.extra_stuff()
     #print(self.endowments[1])
     for i in range(len(self.capital_indexes)):
       if self.capital_indexes[i] == self.output_good:
@@ -366,7 +367,41 @@ class Corporation(Household):
       else:
         self.endowments[self.capital_indexes[i]] = self.goods_supply[self.capital_indexes[i]]*(1-self.depreciation)
 
+    def extra_stuff(self):
+      pass
+
     #print(self.endowments[1])
+"""## Infrastructure"""
+
+class Infrastructure(Corporation):
+  def __init__(self, goods_pref, reset_indexes, tech, shares, output_good, capital_indexes, labour_indexes=[2], endowments=None, depreciation=0.05):
+    super().__init__(goods_pref, reset_indexes, tech, shares, output_good, capital_indexes, labour_indexes, endowments)
+    for i in range(0,len(capital_indexes)):
+      self.endowments[capital_indexes[i]] *= 50
+    self.endowments[-1] = 10
+    self.type2 = "Transport"
+    self.infrastructure_am = [0 for i in range(0,len(goods_pref))]
+    for i in range(0,len(capital_indexes)):
+      self.infrastructure_am[capital_indexes[i]] = 1
+
+  def calculate_capital_share(self, share, output, interest_rate, price):
+    return share * (output/(interest_rate/price)) * 10
+
+  def production_function(self):
+    output = self.technology
+    for i in range(0,len(self.shares)):
+      if self.shares[i] != 0:
+        output *= pow(self.goods_supply[i]+self.infrastructure_am[i], self.shares[i])
+    if self.Resource != 0:
+      output *= pow(self.Resource, self.Resource_share)
+    return output
+
+  def extra_stuff(self):
+    #import pdb; pdb.set_trace()
+    for i in range(0,len(self.capital_indexes)):
+      self.infrastructure_am[self.capital_indexes[i]] += self.goods_supply[self.capital_indexes[i]]
+      self.goods_supply[self.capital_indexes[i]] = 0.01
+    self.infrastructure_am[self.capital_indexes[i]] *= (1-self.depreciation)
 
 """## University"""
 
@@ -969,9 +1004,9 @@ class Government(Household):
     self.InterestRate = []
 
     #Indicators
-    self.var_list = ['GDP','UnemploymentArr','InfrastructureArray','PopulationArr', 'CapitalArr', 'CapitalPerPerson', 'InflationTracker', 'ResentmentArr','Happiness', 'EmploymentRate','ConsumptionArr2', 'Bankruptcies', 'gini', 'EducationArr2','Iron','Crops','Coal','Oil','Food','Services','Steel','Machinery','IronP','WheatP','CoalP','OilP','FoodP','ConsumerGoodsP','SteelP','MachineryP','Income_Tax','Corporate_Tax']
-    self.variable_list = ['output','unemployment','InfrastructureArray','population', 'CapitalArr', 'CapitalPerPerson', 'inflation',      'Resentment','happiness', 'employment', 'ConsumptionArr2', 'bankruptArr', 'gini', 'EducationArr2','#Iron','#Crops','#Coal','#Oil','#Food','#Services','#Steel','#Machinery','@Iron','@Crops','@Coal','@Oil','@Food','@Services','@Steel','@Machinery','!IncomeTax','!CorporateTax']
-    self.weight = [     'N',      'PopulationArr','N',                    'N',         'N',           'PopulationArr',  'GDP',     'PopulationArr'  ,'PopulationArr','PopulationArr',   'PopulationArr', 'N',         'PopulationArr', 'PopulationArr', 'N','N'] +['N' for i in range(0,7)] +['GDP' for i in range(0,7)]+['N','N']
+    self.var_list = ['GDP','UnemploymentArr','InfrastructureArray','PopulationArr', 'CapitalArr', 'CapitalPerPerson', 'InflationTracker', 'ResentmentArr','Happiness', 'EmploymentRate','ConsumptionArr2', 'Bankruptcies', 'gini', 'EducationArr2','Iron','Crops','Coal','Oil','Food','Services','Steel','Machinery','IronP','WheatP','CoalP','OilP','FoodP','ConsumerGoodsP','SteelP','MachineryP','Income_Tax','Corporate_Tax','trade_share',"ScienceArr"]
+    self.variable_list = ['output','unemployment','InfrastructureArray','population', 'CapitalArr', 'CapitalPerPerson', 'inflation',      'Resentment','happiness', 'employment', 'ConsumptionArr2', 'bankruptArr', 'gini', 'EducationArr2','#Iron','#Crops','#Coal','#Oil','#Food','#Services','#Steel','#Machinery','@Iron','@Crops','@Coal','@Oil','@Food','@Services','@Steel','@Machinery','!IncomeTax','!CorporateTax','trade_share', 'science']
+    self.weight = [     'N',      'PopulationArr','N',                    'N',         'N',           'PopulationArr',  'GDP',     'PopulationArr'  ,'PopulationArr','PopulationArr',   'PopulationArr', 'N',         'PopulationArr', 'PopulationArr', 'N','N'] +['N' for i in range(0,7)] +['GDP' for i in range(0,7)]+['N','N','GDP','GDP']
     self.weight_dict = {'PopulationArr':'population', 'GDP':'output'}
     self.index_array = []
     self.save_variable_list(self.var_list)
@@ -1002,9 +1037,9 @@ class Government(Household):
         continue
       if self.weight[i] != 'N':
         weight2 = getattr(M, self.weight_dict[self.weight[i]])[-1]
-      if self.variable_list[i][0] == "#":
+      if self.variable_list[i][0] == "@":
         getattr(self,self.var_list[i])[-1] += M.supply_history[self.index_array[i]][-1]*weight2
-      elif self.variable_list[i][0] == "@":
+      elif self.variable_list[i][0] == "#":
         getattr(self,self.var_list[i])[-1] += M.prices[self.index_array[i]]*weight2
       else:
         getattr(self,self.var_list[i])[-1] += getattr(M, self.variable_list[i])[-1]*weight2
@@ -1207,6 +1242,7 @@ class Market():
     self.sticky = 0.3 #Lower value means prices are more sticky, a higher value up to 1.
     self.labour_sticky = 0.5
     self.inflation_expectation = 0.02
+    self.science = []
     self.CBBalanceSheet = [0]
     self.labour_indexes = labour_indexes
     self.government = self.households[len(self.households)-2]
@@ -1220,6 +1256,7 @@ class Market():
     self.specialty = 'None'
     self.bankruptArr = []
     self.add = 15
+    self.trade_share = [0]
     for i in range(0,len(self.households)):
       self.households[i].market = self
       if self.households[i].type2 == "Bank":
@@ -1258,6 +1295,12 @@ class Market():
       self.households[household_index].goods_supply[good_index] = min((self.households[household_index].goods_pref[good_index]/self.prices[good_index])*(sum([(self.households[household_index].endowments[i])*self.prices[i] for i in range(0,len(self.goods_supply))])), self.households[household_index].goods_supply[good_index]*1.2)
     self.households[household_index].goods_supply[good_index] = (self.households[household_index].goods_pref[good_index]/self.prices[good_index])*(sum([(self.households[household_index].endowments[i])*self.prices[i] for i in range(0,len(self.goods_supply))]))
     return self.households[household_index].goods_supply[good_index]
+
+  def get_trade_share(self):
+    sum2 = 0
+    for i in range(0,len(self.traders)):
+      sum2 += sum(self.traders[i].endowments[0:-5])
+    self.trade_share.append(sum2/self.output[-1])
   
   def run_market(self, iterations, new_goods_supply=None):
     if new_goods_supply != None:
@@ -1316,6 +1359,7 @@ class Market():
       num_children = 0
       num_population = 0
       happy = 0
+      self.science.append(0)
       self.ConsumptionArr2.append(0)
       for i in range(0,len(self.households)):
         if self.households[i].type2 == "Household":
@@ -1326,8 +1370,9 @@ class Market():
           num_population += self.households[i].get_population()
           happy += self.households[i].utility()
           self.EducationArr2[-1] += self.households[i].gov_education
-        elif self.households[i].type2 == "Corporation":
+        elif self.households[i].type2 == "Corporation" or self.households[i].type2 == 'Transport':
           if self.households[i].output_good > 1:
+            self.science[-1] += self.households[i].technology
             for j in self.labour_indexes:
               labour_used += self.households[i].goods_supply[j]
             production = self.households[i].production_function()
@@ -1337,7 +1382,10 @@ class Market():
               temp_output += production
               temp_nominal += production*self.prices[self.households[i].output_good]
           self.households[i].run_turn(interest_rate=(self.interest_rate-self.inflation_expectation)*(1-self.depreciation), price=self.prices[self.households[i].output_good], wage=self.prices[2], run_shares=(i in household_random), prices=self.prices, actual_interest_rate=self.interest_rate, bank=self.get_random_bank())
+          if self.households[i].type2 == 'Transport':
+            self.InfrastructureArray[-1] += sum([self.households[i].infrastructure_am[j] for j in self.households[i].capital_indexes])
         elif self.households[i].type2 == "University":
+          self.science[-1] += self.households[i].technology
           for j in self.labour_indexes:
               labour_used += self.households[i].goods_supply[j]
           if self.specialty != 'None' and self.households[i].focus == self.specialty:
@@ -1357,7 +1405,6 @@ class Market():
            self.households[i].run_turn(self)
         elif self.households[i].type2 == 'Trader' or self.households[i].type2 == 'ForeignTrader':
           self.households[i].run_turn(self.prices, self)
-          self.InfrastructureArray[-1] += sum([self.households[i].goods_supply[j] for j in self.households[i].capital_indexes])
       #if self.turn > 20:
       #ipdb.set_trace(context=6)
       #self.unemployment.append(max((1-(labour_used/num_workers)), 0.005)*100)
@@ -1392,6 +1439,7 @@ class Market():
       #self.inflation_expectation = 0
       self.government.add_variable_list(self)
       self.turn += 1
+      self.get_trade_share()
 
   def get_random_bank(self):
     return self.households[self.bank_indexes[random.randint(0,len(self.bank_indexes)-1)]]
@@ -1718,6 +1766,10 @@ class CreationManager():
         if goods_type[i] == 'Deposits' or i == 0:
           endowments[0] = 2
           corporations.append(Bank(copy.deepcopy(goods_pref),[],1,shares,i,capital_index, labour_index, endowments=copy.deepcopy(endowments),foreign_indexes=foreign_currencies, manager=self.manager))
+        elif goods_type[i] == 'Transport':
+          corp = Infrastructure(copy.deepcopy(goods_pref),[],1,shares,i,capital_index, labour_index, endowments=copy.deepcopy(endowments))
+          tempSet.add(corp)
+          corporations.append(corp)
         elif goods_type[i] != 'ForeignCurrency':
           corp = Corporation(copy.deepcopy(goods_pref),[],1,shares,i,capital_index, labour_index, endowments=copy.deepcopy(endowments))
           corp.input_indexes = input_indexes

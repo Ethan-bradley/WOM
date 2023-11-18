@@ -27,7 +27,7 @@ class CustomObject:
 
 class GameEngine():
 	def __init__(self, num_players, nameListInput, gameName):
-		online = True
+		online = False
 		self.nameList = nameListInput
 		self.EconEngines = []
 		CountryList = nameListInput#['Neutral','Spain','UK','France','Germany','Italy']
@@ -374,6 +374,8 @@ class GameEngine():
 				for t in k:
 					count = self.TradeEngine.CountryNameList.index(t.key.country.name)
 					#Save data to array
+					if t.sanctionAm > 900:
+						import pdb; pdb.set_trace()
 					self.TarriffsArr[t.key.country.name][p.country.name].append(t.tariffAm)
 					self.SanctionsArr[t.key.country.name][p.country.name].append(t.sanctionAm)
 					self.ForeignAid[t.key.country.name][p.country.name].append(t.moneySend)
