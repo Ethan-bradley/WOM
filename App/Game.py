@@ -683,7 +683,8 @@ class GameEngine():
 		to_country = player_to.country.name
 		self.TradeEngine.hex_switches.append(h.name)
 		self.TradeEngine.hex_switches.append(to_country)
-		self.TradeEngine.switch_hex(h.name, to_country)
+		if not g.online:
+			self.TradeEngine.switch_hex(h.name, to_country)
 
 		g.save()
 		h.controller = player_to
