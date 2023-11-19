@@ -143,6 +143,7 @@ class GameEngine():
 			self.TradeEngine.CountryList = myGame.EconEngines"""
 		if graphs and self.EconEngines[0].time > 5:
 			self.set_vars(g, all_players, projection)
+			g.save()
 		if not projection:
 			if g.num_players > 1:
 				for p in all_players:
