@@ -143,7 +143,7 @@ class GameEngine():
 			self.TradeEngine.CountryList = myGame.EconEngines"""
 		if graphs and self.EconEngines[0].time > 5:
 			self.set_vars(g, all_players, projection)
-			g.save()
+			#g.save()
 		if not projection:
 			if g.num_players > 1:
 				for p in all_players:
@@ -405,7 +405,7 @@ class GameEngine():
 					country.subsidies[index] = product.subsidy
 			#except:
 			#	print("Index out of range error!")
-			
+		g.save()	
 		#ADD these functions:
 		def trade_money(self, transfer_array):
 			#i is the destination country, j is the source country.
