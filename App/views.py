@@ -933,6 +933,7 @@ def gamegraph(g, p, context, graphmode, game):
             elif hasattr(trade, attribute):
                 arr = getattr(trade, attribute)[j][start:]
             else:
+                continue
                 #import pdb; pdb.set_trace()
                 arr = getattr(game, attribute)[j][start:]
                 if len(arr) == 0:
