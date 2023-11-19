@@ -1004,9 +1004,9 @@ class Government(Household):
     self.InterestRate = []
 
     #Indicators
-    self.var_list = ['GDP','UnemploymentArr','InfrastructureArray','PopulationArr', 'CapitalArr', 'CapitalPerPerson', 'InflationTracker', 'ResentmentArr','Happiness', 'EmploymentRate','ConsumptionArr2', 'Bankruptcies', 'gini', 'EducationArr2','Iron','Crops','Coal','Oil','Food','Services','Steel','Machinery','IronP','WheatP','CoalP','OilP','FoodP','ConsumerGoodsP','SteelP','MachineryP','Income_Tax','Corporate_Tax','trade_share',"ScienceArr"]
-    self.variable_list = ['output','unemployment','InfrastructureArray','population', 'CapitalArr', 'CapitalPerPerson', 'inflation',      'Resentment','happiness', 'employment', 'ConsumptionArr2', 'bankruptArr', 'gini', 'EducationArr2','#Iron','#Crops','#Coal','#Oil','#Food','#Services','#Steel','#Machinery','@Iron','@Crops','@Coal','@Oil','@Food','@Services','@Steel','@Machinery','!IncomeTax','!CorporateTax','trade_share', 'science']
-    self.weight = [     'N',      'PopulationArr','N',                    'N',         'N',           'PopulationArr',  'GDP',     'PopulationArr'  ,'PopulationArr','PopulationArr',   'PopulationArr', 'N',         'PopulationArr', 'PopulationArr', 'N','N'] +['N' for i in range(0,7)] +['GDP' for i in range(0,7)]+['N','N','GDP','GDP']
+    self.var_list = ['GDP','UnemploymentArr','InfrastructureArray','PopulationArr', 'CapitalArr', 'CapitalPerPerson', 'InflationTracker', 'ResentmentArr','Happiness', 'EmploymentRate','ConsumptionArr2', 'Bankruptcies', 'gini', 'EducationArr2','Iron','Crops','Coal','Oil','Food','Services','Steel','Machinery','IronP','WheatP','CoalP','OilP','FoodP','ConsumerGoodsP','SteelP','MachineryP','Income_Tax','Corporate_Tax','trade_share','ScienceArr','Welfare','EducationSpend','MilitarySpend','Infrastructure']
+    self.variable_list = ['output','unemployment','InfrastructureArray','population', 'CapitalArr', 'CapitalPerPerson', 'inflation',      'Resentment','happiness', 'employment', 'ConsumptionArr2', 'bankruptArr', 'gini', 'EducationArr2','#Iron','#Crops','#Coal','#Oil','#Food','#Services','#Steel','#Machinery','@Iron','@Crops','@Coal','@Oil','@Food','@Services','@Steel','@Machinery','!IncomeTax','!CorporateTax','trade_share', 'science','!GovWelfare','*EducationIndex','*MilitaryIndex','!InfrastructureInvest']
+    self.weight = [     'N',      'PopulationArr','N',                    'N',         'N',           'PopulationArr',  'GDP',     'PopulationArr'  ,'PopulationArr','PopulationArr',   'PopulationArr', 'N',         'PopulationArr', 'PopulationArr', 'N','N'] +['N' for i in range(0,7)] +['GDP' for i in range(0,7)]+['N','N','GDP','GDP']+['N' for i in range(0,4)]
     self.weight_dict = {'PopulationArr':'population', 'GDP':'output'}
     self.index_array = []
     self.save_variable_list(self.var_list)
@@ -1023,6 +1023,8 @@ class Government(Household):
     for i in range(0,len(self.var_list)):
       if self.variable_list[i][0] == "!":
         getattr(self,self.var_list[i]).append(getattr(self,self.variable_list[i][1:]))
+      elif self.variable_list[i][0] == "*":
+        getattr(self,self.var_list[i]).append(self.spending[getattr(self, self.variable_list[i][1:])])
       else:
         getattr(self,self.var_list[i]).append(0)
     for i in range(0,len(self.goods_pref)):
@@ -1033,7 +1035,7 @@ class Government(Household):
     weight2 = 1
     for i in range(0,len(self.var_list)):
       weight2 = 1
-      if self.variable_list[i][0] == "!":
+      if self.variable_list[i][0] == "!" or self.variable_list[i][0] == "*":
         continue
       if self.weight[i] != 'N':
         weight2 = getattr(M, self.weight_dict[self.weight[i]])[-1]

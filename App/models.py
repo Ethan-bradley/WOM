@@ -252,10 +252,10 @@ class GraphInterface(models.Model):
 	INCOMETAX = 'Income_Tax'
 	CORPORATETAX = 'Corporate_Tax'
 	WELFARE = 'Welfare'
-	EDUCATION = "Education"
+	EDUCATION = "EducationSpend"
 	SCIENCE = "Science"
 	INFRASTRUCTURE = "Infrastructure"
-	MILITARY = "Military"
+	MILITARY = "MilitarySpend"
 	MONEY = "InterestRate"
 	IRON = "Iron"
 	CROPS = "Crops"
