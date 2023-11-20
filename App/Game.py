@@ -174,6 +174,7 @@ class GameEngine():
 		else:
 			responseObject = {}
 			json_payload = manager_to_json(self.TradeEngine)
+			import pdb; pdb.set_trace()
 			json_payload = json.dumps(json_payload)
 			# Send the POST request with the JSON body
 			api_url = "https://fgpbj614t7.execute-api.us-east-2.amazonaws.com/dev/econhelper?transactionId=124&newGame=False&gameName="+self.gameName+"&runEngine=True&years_run="+str(years_run)+"&num_players=1"
@@ -799,6 +800,7 @@ def to_json(self):
     	if not isinstance(self_dict[attr_name], list):
     		json_data[attr_name] = self_dict[attr_name]
     json_data['subsidies'] = self_dict["subsidies"]
+    json_data['spending'] = self_dict["spending"]
     """for attr_name, attr_value in self.__dict__.items():
         if isinstance(attr_value, list):
             if len(attr_value) > 0:
