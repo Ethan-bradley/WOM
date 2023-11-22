@@ -248,7 +248,6 @@ def runNext(request, g):
     #temp.GameEngine.run_start_trade(temp)
     temp.save()
 
-@login_required
 def runNext2(request, g):
     temp = Game.objects.filter(name=g)[0]
     #temp.GameEngine.run_start_trade(temp, 1)
