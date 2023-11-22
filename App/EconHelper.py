@@ -1116,7 +1116,7 @@ class Government(Household):
 
   def normalize(self):
     for i in range(0,len(self.spending)):
-      self.goods_pref[i] = self.spending[i]/self.total_spending
+      self.goods_pref[i] = self.spending[i]/(self.total_spending+0.000001)
   
   def display_graphs(self, start_year):
     for i in self.var_list:

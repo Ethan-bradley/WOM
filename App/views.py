@@ -252,8 +252,11 @@ def runNext(request, g):
 def runNext2(request, g):
     temp = Game.objects.filter(name=g)[0]
     #temp.GameEngine.run_start_trade(temp, 1)
-    temp.GameEngine.run_start_trade(temp, 4)
+    #temp.GameEngine.run_start_trade(temp, 4)
+    #temp.save()
+    temp.GameEngine.run_engine(temp, True, temp.years_per_turn)
     temp.save()
+
 
 def runNext3(request, g):
     temp = Game.objects.filter(name=g)[0]
