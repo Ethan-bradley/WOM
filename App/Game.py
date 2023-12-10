@@ -376,8 +376,8 @@ class GameEngine():
 				for t in k:
 					count = self.TradeEngine.CountryNameList.index(t.key.country.name)
 					#Save data to array
-					if t.sanctionAm > 900:
-						import pdb; pdb.set_trace()
+					#if t.sanctionAm > 900:
+					#import pdb; pdb.set_trace()
 					self.TarriffsArr[t.key.country.name][p.country.name].append(t.tariffAm)
 					self.SanctionsArr[t.key.country.name][p.country.name].append(t.sanctionAm)
 					self.ForeignAid[t.key.country.name][p.country.name].append(t.moneySend)
@@ -673,8 +673,8 @@ class GameEngine():
 		if p.name != "Neutral":
 			neutral_player = Player.objects.filter(game=g,name="Neutral")[0]
 			self.switch_hex(hex2, neutral_player, g)
-			Army.objects.create(game=g, size=int(hex2.population*res),controller=neutral_player, naval=False, location=hex2, name=hex2.name+" Rebel Army")
-			message2 = "In "+p.name+"'s territory a rebel army of size "+str(round(hex2.population*res*100,0))+" rose up in "+hex2.name
+			Army.objects.create(game=g, size=int(hex2.population*res*0.1),controller=neutral_player, naval=False, location=hex2, name=hex2.name+" Rebel Army")
+			message2 = "In "+p.name+"'s territory a rebel army of size "+str(round(hex2.population*res*0.1,0))+" rose up in "+hex2.name
 			turn = g.GameEngine.get_country_by_name("UK").time - 6
 			Notification.objects.create(game=g, message=message2,year=turn)
 

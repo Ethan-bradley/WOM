@@ -94,8 +94,6 @@ def get_trade_graph(request, game, player):
     }
     return render(request, "App/trade"+game+player+".html")
 
-    #return JsonResponse(task_status)
-
 @login_required
 def new_game(request):
     online = True
@@ -525,7 +523,6 @@ def game(request, g, player):
         govRevenue = round(sum((country.IncomeTaxArray[-2], country.CorporateTaxArray[-2], country.TarriffCollectionArray[-2], float(country.Government_Savings)*country.interest_rate)))
     else:
         govRevenue = 0.1
-
     if country.GDP[-1] > 0:
         govSpend = round(sum([country.EducationArray[-2], country.MilitaryArr[-2], country.GovWelfareArray[-2], country.ScienceBudgetArr[-2], country.InfrastructureArr[-2], country.SubsidyArr[-2]])/country.GDP[-1],2)
         govRevenueGDP = round(govRevenue/country.GDP[-1],2)
@@ -549,7 +546,7 @@ def game(request, g, player):
         'game':gtemp,
         'player':ptemp,
         'govForm':govForm,
-        'GovMoney':round(player.get_country().Government_SavingsArray[-1],2),
+        'GovMoney':govRevenue,
         'GovSavings': round(player.get_country().Government_SavingsArray[-1],2),
         'GovDebt':govDebt,
         'CurrencyReserves':"",
@@ -577,6 +574,23 @@ def fixVars(request, g):
 #loads the army map
 @login_required
 def map(request, g, p, l, lprev):
+    def create_supply_graph(good_supply,names, title,start, graph_dict={}):
+        data = {'Country': [],
+        title: [],
+        'Year':[]
+        }
+        graph_dict['data'].append([])
+        graph_dict['colors'].append([])
+        graph_dict['line_titles'].append([])
+        last_index = len(graph_dict['data']) - 1
+        for j in range(0, len(good_supply)):
+            arr = good_supply[j][start:]
+            data[title] += arr
+            data['Year'] += [i for i in range(0,len(arr))]
+            graph_dict['data'][last_index].append(arr)
+        graph_dict['line_titles'][last_index] = names
+        graph_dict['colors'][last_index] = ['rgb('+str(color1)+','+str(color1*50 % 255)+','+str(255 - color1)+')' for color1 in range(0,255,int(255/len(good_supply)))]
+        graph_dict['title'].append(title)
     reset_queries()
     #Col used for storing the map colors in a 2d array
     col = []
@@ -587,6 +601,13 @@ def map(request, g, p, l, lprev):
     p = Player.objects.filter(name=p)[0]
     player = p
     size = g.board_size
+
+    graph_dict = {
+    'title':[],
+    'data':[],
+    'colors':[],
+    'line_titles':[]
+    }
     #Finds total size of all armies of this player.
     total_armies = Army.objects.filter(game=g, controller=p)
     total_size = 0
@@ -594,7 +615,7 @@ def map(request, g, p, l, lprev):
         total_size += army.size
     #Loads the army form on post
     #import pdb; pdb.set_trace()
-    t = MapInterface.objects.filter(game=g,controller=p)[0]
+    t = MapInterface.objects.filter(game=g, controller=p)[0]
     if request.method == 'POST':
         if 'specialty' in request.POST:
             if l != 'null':
@@ -614,7 +635,7 @@ def map(request, g, p, l, lprev):
         else:
             if l != 'null':
                 h = Hexes.objects.filter(game=g, hexNum=l)[0]
-                v = Army.objects.filter(game=g,location=h, controller=p)
+                v = Army.objects.filter(game=g, location=h, controller=p)
                 if len(v) > 0:
                     form = ArmyForm(request.POST, instance=v[0])
                 else:
@@ -785,6 +806,7 @@ def map(request, g, p, l, lprev):
         #If a tiles has been selected, load that particular army if an army is on it, 
         #if not then load a basic Army form with that location defaulted into the form.
         h = Hexes.objects.filter(game=g, hexNum=l)[0]
+        create_supply_graph(g.GameEngine.TradeEngine.market_list[g.GameEngine.TradeEngine.location_names.index(h.name)].supply_history,g.GameEngine.TradeEngine.good_names,'Supply_History',5, graph_dict)
         v = Army.objects.filter(game=g,location=h, controller=player)
         hexForm = UniversityForm(instance=h)
         if not v:
@@ -823,7 +845,10 @@ def map(request, g, p, l, lprev):
         'resources':t.mode == "RE",
         'notifications': Notification.objects.filter(game=g, year__gt=player.get_country().time)[::-1],
         'board_size':g.board_size,
-        'curr_army_index':-random_index
+        'curr_army_index':-random_index,
+        'graph_dict':graph_dict,
+        'labels': [i for i in range(0,player.get_country().time-5)],
+        'graphs': graph_dict['title'],
     }
     return render(request, 'App/map.html', context)
 
@@ -1197,7 +1222,7 @@ def trade(request, g, p):
             count += 1
         IFS = IndFormSet(queryset=IndTariff.objects.filter(controller=tar))
     if not os.path.exists("App/trade"+gtemp+ptemp+".html"):
-        trade_diagram(g.GameEngine.TradeEngine.CountryNameList, g.GameEngine.TradeEngine.good_balance[g.GameEngine.TradeEngine.good_names.index('Iron')], "trade"+gtemp+ptemp)
+        trade_diagram(g.GameEngine.TradeEngine.CountryNameList, g.GameEngine.TradeEngine.good_balance[g.GameEngine.TradeEngine.good_names.index('Iron')], "graphs/trade"+gtemp+ptemp)
     context = {
         'indForms': IFS,
         'country': p.country,
@@ -1212,6 +1237,7 @@ def trade(request, g, p):
         'tariff_titles':tariff_titles,
         'titles':titles,
         'graphs': graph_dict['title'],
+        'tradeGraph':"App/graphs/trade"+gtemp+ptemp+".html",
         'graph_dict': graph_dict,
         'labels':[i for i in range(0,len(g.GameEngine.TarriffsArr['UK']['Germany'])-start)],
     }
