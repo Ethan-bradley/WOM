@@ -124,7 +124,7 @@ class GameEngine():
 			#self.apply_hex_number(g, p, country)
 			self.start_hex_number(g, p, country)
 
-	def run_engine(self, g, graphs=True, years_run=1, projection=False):
+	def run_engine(self, g, graphs=True, years_run=1, projection=False, first_run=True):
 		online = g.online
 		all_players = Player.objects.filter(game=g)
 		# Define the headers, including "Content-Type" as "application/json"
@@ -142,7 +142,7 @@ class GameEngine():
 			self.TradeEngine = myGame.TradeEngine
 			self.TradeEngine.CountryList = myGame.EconEngines"""
 		if graphs and self.EconEngines[0].time > 5:
-			self.set_vars(g, all_players, projection)
+			self.set_vars(g, all_players, projection, first_run)
 			#g.save()
 		if not projection:
 			if g.num_players > 1:
@@ -324,7 +324,7 @@ class GameEngine():
 			g.save()
 		os.remove(a[7] +'.png')
 
-	def set_vars(self, g, all_players, projection=False):
+	def set_vars(self, g, all_players, projection=False, first_run=False):
 		transfer_array = [[0 for j in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))]
 		military_transfer = [[0 for j in range(0,len(self.EconEngines))] for i in range(0,len(self.EconEngines))]
 		for p in all_players:
@@ -368,7 +368,7 @@ class GameEngine():
 			#import pdb; pdb.set_trace()
 			#try:
 			tar = Tariff.objects.filter(game=g, curr_player=p)
-			if len(tar) != 0:
+			if len(tar) != 0 and first_run:
 				tar = tar[0]
 				k = IndTariff.objects.filter(controller=tar)
 

@@ -251,7 +251,7 @@ def runNext2(request, g):
     #temp.GameEngine.run_start_trade(temp, 1)
     #temp.GameEngine.run_start_trade(temp, 4)
     #temp.save()
-    temp.GameEngine.run_engine(temp, True, temp.years_per_turn)
+    temp.GameEngine.run_engine(temp, True, temp.years_per_turn, True)
     temp.save()
 
 
@@ -272,7 +272,7 @@ def runNext3(request, g):
     temp.GameEngine.TradeEngine.CountryList = myGame.EconEngines
     if temp.GameEngine.EconEngines[0].time > 5:
         all_players = Player.objects.filter(game=temp)
-        temp.GameEngine.set_vars(temp, all_players, False)
+        temp.GameEngine.set_vars(temp, all_players, False, False)
     temp.game_started = True
     temp.load_complete = True
     temp.save()
@@ -1082,11 +1082,11 @@ def gamegraph(g, p, context, graphmode, game):
     })
     #return render(request, 'App/gamegraphs.html', context)
 
-def trade(request, g, p):
+def trade(request, g, p, selected_option="Iron"):
     reset_queries()
     gtemp = g
     ptemp = p
-    start = 5
+    start = 6
     g = Game.objects.filter(name=g)[0]
     p = Player.objects.filter(name=p)[0]
     player = p
@@ -1181,7 +1181,7 @@ def trade(request, g, p):
     'line_titles':[]
     }
     t = GraphCountryInterface.objects.filter(game=g,controller=p)[0]
-    create_exchange_rate_graph(g.GameEngine.TradeEngine,4)
+    create_exchange_rate_graph(g.GameEngine.TradeEngine,start)
     data3 = []
     titles = []
     #create_foreign_investment_pie(g.GameEngine.TradeEngine.CountryName.index(p.country.name), g.GameEngine.TradeEngine, titles, data3)
@@ -1189,6 +1189,7 @@ def trade(request, g, p):
     #create_trade_rate_graph(g.GameEngine,"SanctionsArr","Sanctions",t.country.name,start)
     #create_trade_rate_graph(g.GameEngine,"ForeignAid","Foreign Aid",t.country.name,start)
     #create_trade_rate_graph(g.GameEngine,"MilitaryAid","Military Aid",t.country.name,start)
+    #import pdb; pdb.set_trace();
     create_compare_graph("TarriffsArr", "Tarriffs", g.GameEngine.TradeEngine,t.country.name,start,graph_dict, g.GameEngine)
     create_compare_graph("SanctionsArr","Sanctions", g.GameEngine.TradeEngine,t.country.name,start,graph_dict, g.GameEngine)
     create_compare_graph("ForeignAid","Foreign_Aid", g.GameEngine.TradeEngine,t.country.name,start,graph_dict, g.GameEngine)
@@ -1221,8 +1222,9 @@ def trade(request, g, p):
             tariff_titles[count] = f.key.country.name+": "+f.key.name
             count += 1
         IFS = IndFormSet(queryset=IndTariff.objects.filter(controller=tar))
-    if not os.path.exists("App/trade"+gtemp+ptemp+".html"):
-        trade_diagram(g.GameEngine.TradeEngine.CountryNameList, g.GameEngine.TradeEngine.good_balance[g.GameEngine.TradeEngine.good_names.index('Iron')], "graphs/trade"+gtemp+ptemp)
+    #if not os.path.exists("App/trade"+gtemp+ptemp+".html"):
+    #import pdb; pdb.set_trace()
+    trade_diagram(g.GameEngine.TradeEngine.CountryNameList, g.GameEngine.TradeEngine.good_balance[g.GameEngine.TradeEngine.good_names.index(selected_option)], "graphs/trade"+gtemp+ptemp)
     context = {
         'indForms': IFS,
         'country': p.country,
@@ -1239,6 +1241,7 @@ def trade(request, g, p):
         'graphs': graph_dict['title'],
         'tradeGraph':"App/graphs/trade"+gtemp+ptemp+".html",
         'graph_dict': graph_dict,
+        'selected_option': selected_option,
         'labels':[i for i in range(0,len(g.GameEngine.TarriffsArr['UK']['Germany'])-start)],
     }
     reset_queries()
@@ -1451,7 +1454,7 @@ def projection(g, p, context, run=True):
         other_player = Player.objects.filter(country=t.country)[0]
         new_country2 = copy.deepcopy(p.get_country())
         country = new_country"""
-        temp = g.GameEngine.run_engine(g, False, 3, True)
+        temp = g.GameEngine.run_engine(g, False, 3, True, False)
         new_engine = temp[1]
         print("Creating Projection")
         #new_country.run_turn(5)

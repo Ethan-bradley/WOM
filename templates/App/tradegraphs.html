@@ -9,6 +9,7 @@
       {% include tradeGraph %}
     <!-- HTML Template -->
     <select id="optionDropdown">
+      <option value="{{ selected_option }}">{{ selected_option }}</option>
         <option value="Iron">Iron</option>
         <option value="Coal">Coal</option>
          <option value="Food">Food</option>
@@ -43,7 +44,7 @@
                 <button class="btn btn-outline-info" type="submit" id="submit">Change Graph Mode</button>
             </div>
         </form>
-      <legend class="border-bottom mb-4">Tariffs <span style="float:right;" data-toggle="tooltip" title="This wouldn't be War by Other Means, without those other means, so here they are. Although I should not that because of trade, even domestic economic developments can and have an effect on other players, although not quite as large and certainly not quite as closely targeted as these policies. Which are:
+      <legend class="border-bottom mb-4">Tariffs <span class="custom-tooltip" style="float:right;" data-toggle="tooltip" title="This wouldn't be War by Other Means, without those other means, so here they are. Although I should not that because of trade, even domestic economic developments can and have an effect on other players, although not quite as large and certainly not quite as closely targeted as these policies. Which are:
 
 - Import Tariffs (TariffAm) levy a tax on all goods imported from a given country. That tax is added on top of the good's price, so a 50% tariff would multiply the price by 1.5
 - Export Tariffs (SanctionAm) are the same as Import Tariffs, only the tax is put on goods leaving your country and going to that other country
@@ -218,20 +219,25 @@ $(document).ready(function () {
         const data = {
                 selected_option: selectedOption,
         }
-        fetch("{% url 'get_trade_graph' game=game player=player %}", {
-          method: 'POST',
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            'Content-Type': 'application/json' 
-          },
-          body: JSON.stringify(data)
-        })
-        .then(response => response.text())
-        .then(htmlContent => {
-            console.log("Got data")
-            location.reload(true);
-        });
-    });
+        //game = {{ game }}
+        //player = {{ player }}
+        var currentURL = window.location.href;
+        var fourthSlashIndex = -1;
+        for (var i = 0, count = 0; i < currentURL.length; i++) {
+            if (currentURL[i] === '/') {
+                count++;
+                if (count === 6) {
+                    fourthSlashIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Extract the substring up to the 4th slash
+        var modifiedURL = fourthSlashIndex !== -1 ? currentURL.substring(0, fourthSlashIndex) : currentURL;
+          var newURL = modifiedURL + "/" + encodeURIComponent(selectedOption);
+          window.location.href = newURL;
+      });
 });
 
 </script>
