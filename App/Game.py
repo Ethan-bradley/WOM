@@ -144,6 +144,7 @@ class GameEngine():
 		if graphs and self.EconEngines[0].time > 5:
 			self.set_vars(g, all_players, projection, first_run)
 			#g.save()
+		#import pdb; pdb.set_trace()
 		if not projection:
 			if g.num_players > 1:
 				for p in all_players:

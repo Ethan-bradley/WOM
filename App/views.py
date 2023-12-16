@@ -251,7 +251,7 @@ def runNext2(request, g):
     #temp.GameEngine.run_start_trade(temp, 1)
     #temp.GameEngine.run_start_trade(temp, 4)
     #temp.save()
-    temp.GameEngine.run_engine(temp, True, temp.years_per_turn, True)
+    temp.GameEngine.run_engine(temp, True, temp.years_per_turn, False, True)
     temp.save()
 
 
