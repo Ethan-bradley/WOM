@@ -666,11 +666,11 @@ def map(request, g, p, l, lprev):
                 if f.naval and not h.water:
                     messages.warning(request, f'A naval force cannot be built on land!')
                     return redirect('map', gtemp, ptemp, 'null', 'null')
-                if lprev == 'null':
+                if lprev == 'null' or lprev == h.hexNum:
                     if len(v) == 0:
                         #country = p.get_country()
-                        if total_size + s > 10000000:
-                            messages.warning(request, f'The total size of all your armies combined cannnot be more than 10m!')
+                        if total_size + s > 1000:
+                            messages.warning(request, f'The total size of all your armies combined cannnot be more than 1000!')
                             return redirect('map', gtemp, ptemp, 'null', 'null')
                         if p.get_country().Military - s >= 0:
                             g.GameEngine.modify_country_by_name(p.country.name, 'Military', p.get_country().Military - s)
@@ -685,16 +685,20 @@ def map(request, g, p, l, lprev):
                             v[0].delete()
                             messages.success(request, f'Army succesfully disbanded!')
                             return redirect('map', gtemp, ptemp, 'null', 'null')
-                        s = s - v[0].size
-                        if total_size + s > 10000000:
-                            messages.warning(request, f'The total size of all your armies combined cannnot be more than 10m!')
+                        military_sub = s - v[0].size
+                        #import pdb; pdb.set_trace()
+                        if total_size + military_sub > 1000:
+                            messages.warning(request, f'The total size of all your armies combined cannnot be more than 1000!')
                             return redirect('map', gtemp, ptemp, 'null', 'null')
-                        if p.get_country().Military - s >= 0:
-                            g.GameEngine.modify_country_by_name(p.country.name, 'Military', p.get_country().Military - s)
+                        if p.get_country().Military - military_sub >= 0:
+                            g.GameEngine.modify_country_by_name(p.country.name, 'Military', p.get_country().Military - military_sub)
                             g.save()
+                        #elif s < 0:
+                        #g.GameEngine.modify_country_by_name(p.country.name, 'Military', p.get_country().Military - s)
+                        #f.size = s
                         else:
                             f.size = v[0].size
-                        if p.get_country().Military - s - (total_size + s)*0.1 < 0:
+                        if p.get_country().Military - military_sub - (total_size + military_sub)*0.1 < 0:
                             messages.warning(request, f'Building this army does not leave enough remaining for army maintenace, which puts you at risk of army rebellion.')
                 else:
                     p.modify_country('Military', p.get_country().Military - s)
