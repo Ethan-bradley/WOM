@@ -959,12 +959,14 @@ def gamegraph(g, p, context, graphmode, game):
                 arr = getattr(countries[j], attribute)[start:]
             elif hasattr(trade, attribute):
                 arr = getattr(trade, attribute)[j][start:]
-            else:
-                continue
+            elif hasattr(game, attribute):
+                #continue
                 #import pdb; pdb.set_trace()
                 arr = getattr(game, attribute)[j][start:]
                 if len(arr) == 0:
                     continue
+            else:
+                continue
             for i in range(1,len(arr)):
                 if math.isnan(arr[i]):
                     arr[i] = arr[i-1]
@@ -1072,7 +1074,6 @@ def gamegraph(g, p, context, graphmode, game):
         'Employment':g.Employment,
         'GoodsBalance':g.GoodsBalance,
         'InterestRate':g.InterestRate,
-        'Consumption':g.Consumption,
         'game':gtemp,
         'player':ptemp,
         'notifications': Notification.objects.filter(game=g, year__gt=p.get_country().time - start)[::-1],
