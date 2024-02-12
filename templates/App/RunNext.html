@@ -1,0 +1,17 @@
+{% extends "App/base.html" %}
+{% block content %}
+    {% for post in posts %}
+        <article class="media content-section">
+          <div class="media-body">
+            <div class="col-md-4">
+          <div class="content-section">
+            <h3>Sidebar</h3>
+            <p class='text-muted'>Tabs
+              <ul class="list-group">
+                <li class="list-group-item list-group-item-light"><a href="{% url 'app-game' g=game player=player %}">Press button to load game</a> </li>
+              </ul>
+            </p>
+          </div>
+        </article>
+    {% endfor %}
+{% endblock content %}

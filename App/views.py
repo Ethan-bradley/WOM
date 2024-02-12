@@ -125,7 +125,7 @@ def new_game(request):
             f.curr_num_players = 1
             if f.num_players > 5 or f.num_players == -1:
                 #job = q.enqueue(create_countries, 'http://heroku.com', on_success=organize_countries)
-                f.GameEngine = GameEngine(15,['UK', 'Germany', 'France', 'Spain', 'Italy', 'Poland', 'Sweden', 'Egypt','Algeria', 'Turkey', 'Ukraine', 'Russia', 'Iran', 'Saudi Arabia', 'Neutral'], f.name)
+                f.GameEngine = GameEngine(15, ['UK', 'Germany', 'France', 'Spain', 'Italy', 'Poland', 'Sweden', 'Egypt','Algeria', 'Turkey', 'Ukraine', 'Russia', 'Iran', 'Saudi Arabia', 'Neutral'], f.name)
             f.save()
             #import pdb; pdb.set_trace();
             #Saves game name in temporary variable
@@ -259,10 +259,11 @@ def runNext3(request, g):
     temp = Game.objects.filter(name=g)[0]
     #temp.GameEngine.run_start_trade(temp, 3)
     #temp.GameEngine.run_engine(temp)
+    #+temp.name+
     headers = {
                 "Content-Type": "application/json"
     }
-    url = "https://fgpbj614t7.execute-api.us-east-2.amazonaws.com/dev/econhelper?transactionId=124&newGame=False&gameName="+temp.name+"&runEngine=False&years_run=1&num_players=1"
+    url = "https://fgpbj614t7.execute-api.us-east-2.amazonaws.com/dev/econhelper?transactionId=124&newGame=False&gameName=testgame&runEngine=False&years_run=1&num_players=1"
     header = {}
     data = requests.get(url, headers=header).json()
     #import pdb; pdb.set_trace()
@@ -427,7 +428,7 @@ def game(request, g, player):
     gtemp = g
     ptemp = player
     g = Game.objects.filter(name=g)[0]
-    player = Player.objects.filter(name=player)[0]
+    player = Player.objects.filter(game=g, name=player)[0]
     tar = Tariff.objects.filter(game=g, curr_player=player)[0]
     k = IndTariff.objects.filter(controller=tar)
     IndFormSet = modelformset_factory(IndTariff, fields=['tariffAm','sanctionAm','moneySend','militarySend','nationalization'], extra=0)
@@ -598,7 +599,7 @@ def map(request, g, p, l, lprev):
     gtemp = g
     ptemp = p
     g = Game.objects.filter(name=g)[0]
-    p = Player.objects.filter(name=p)[0]
+    p = Player.objects.filter(game=g, name=p)[0]
     player = p
     size = g.board_size
 
@@ -871,7 +872,7 @@ def graph(request, g, p):
     gtemp = g
     ptemp = p
     g = Game.objects.filter(name=g)[0]
-    p = Player.objects.filter(name=p)[0]
+    p = Player.objects.filter(game=g, name=p)[0]
     start = 5
     #if not os.path.exists('.'+g.GoodsPerCapita.url):
     #g.GameEngine.run_graphs(g)
@@ -1004,7 +1005,7 @@ def gamegraph(g, p, context, graphmode, game):
     gtemp = g
     ptemp = p
     g = Game.objects.filter(name=g)[0]
-    p = Player.objects.filter(name=p)[0]
+    p = Player.objects.filter(game=g, name=p)[0]
     start = 5
     
     create_compare_graph("UnemploymentArr", "Unemployment", g.GameEngine.TradeEngine, g.GameEngine.TradeEngine.CountryList, start,graph_dict)
@@ -1093,7 +1094,7 @@ def trade(request, g, p, selected_option="Iron"):
     ptemp = p
     start = 6
     g = Game.objects.filter(name=g)[0]
-    p = Player.objects.filter(name=p)[0]
+    p = Player.objects.filter(game=g, name=p)[0]
     player = p
     tar = Tariff.objects.filter(game=g, curr_player=player)[0]
     k = IndTariff.objects.filter(controller=tar)
@@ -1257,7 +1258,7 @@ def policies(request, g, p):
     gtemp = g
     ptemp = p
     g = Game.objects.filter(name=g)[0]
-    p = Player.objects.filter(name=p)[0]
+    p = Player.objects.filter(game=g, name=p)[0]
     policy_list = PolicyGroup.objects.filter(game=g, player=p)
     titles = {}
     group_titles = {}
@@ -1357,7 +1358,7 @@ def delete(request, g, p):
             #'posts': posts
         }
     try:
-        p = Player.objects.filter(name=p)[0]
+        p = Player.objects.filter(game=g, name=p)[0]
         all_players = Player.objects.filter(game=g)
         if p.host:
             for filename in os.listdir("templates/App/graphs"):
@@ -1450,7 +1451,7 @@ def projection(g, p, context, run=True):
     gtemp = g
     ptemp = p
     g = Game.objects.filter(name=g)[0]
-    p = Player.objects.filter(name=p)[0]
+    p = Player.objects.filter(game=g, name=p)[0]
     start = 5
     if True:
         

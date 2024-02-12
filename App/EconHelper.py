@@ -1284,18 +1284,29 @@ class Market():
       self.prices[good_index] = 1
     elif good_index > 1:
       new_price = top/bottom
-      self.prices[good_index] = max(min(self.prices[good_index] + sticky*(new_price - self.prices[good_index]), self.prices[good_index]*15), self.prices[good_index]*0.1)
+      self.prices[good_index] = max(min(self.prices[good_index] + self.sigmoid(sticky,new_price,self.prices[good_index])*(new_price - self.prices[good_index]), self.prices[good_index]*15), self.prices[good_index]*0.1)
     else:
       self.prices[good_index] = top/bottom
     if top == 0:
       print("Error with this price: ", good_index)
     return self.prices[good_index]
-  
+
+  def sigmoid(self, sticky, new_price, old_price):
+    if new_price > old_price:
+      diff = new_price/(old_price)
+    else:
+      diff = old_price/new_price
+    if diff < 4:
+      return sticky
+    else:
+      output = abs(2/(1+pow(2,0.6*diff))-1)
+      return max(sticky, output)
+
   def get_amounts(self, household_index, good_index):
     #print(good_index)
     if good_index in self.labour_indexes:
       self.households[household_index].goods_supply[good_index] = min((self.households[household_index].goods_pref[good_index]/self.prices[good_index])*(sum([(self.households[household_index].endowments[i])*self.prices[i] for i in range(0,len(self.goods_supply))])), self.households[household_index].goods_supply[good_index]*1.2)
-    self.households[household_index].goods_supply[good_index] = (self.households[household_index].goods_pref[good_index]/self.prices[good_index])*(sum([(self.households[household_index].endowments[i])*self.prices[i] for i in range(0,len(self.goods_supply))]))
+    self.households[household_index].goods_supply[good_index] = max((self.households[household_index].goods_pref[good_index]/self.prices[good_index])*(sum([(self.households[household_index].endowments[i])*self.prices[i] for i in range(0,len(self.goods_supply))])), 0.00000001)
     return self.households[household_index].goods_supply[good_index]
 
   def get_trade_share(self):
@@ -1383,7 +1394,7 @@ class Market():
             if self.goods_names[self.households[i].output_good] in self.final_goods:
               temp_output += production
               temp_nominal += production*self.prices[self.households[i].output_good]
-          self.households[i].run_turn(interest_rate=(self.interest_rate-self.inflation_expectation)*(1-self.depreciation), price=self.prices[self.households[i].output_good], wage=self.prices[2], run_shares=(i in household_random), prices=self.prices, actual_interest_rate=self.interest_rate, bank=self.get_random_bank())
+          self.households[i].run_turn(interest_rate=max(self.interest_rate-self.inflation_expectation, -0.2)*(1-self.depreciation), price=self.prices[self.households[i].output_good], wage=self.prices[2], run_shares=(i in household_random), prices=self.prices, actual_interest_rate=self.interest_rate, bank=self.get_random_bank())
           if self.households[i].type2 == 'Transport':
             self.InfrastructureArray[-1] += sum([self.households[i].infrastructure_am[j] for j in self.households[i].capital_indexes])
         elif self.households[i].type2 == "University":
@@ -1392,13 +1403,13 @@ class Market():
               labour_used += self.households[i].goods_supply[j]
           if self.specialty != 'None' and self.households[i].focus == self.specialty:
             self.households[i].level = self.universityLevel*0.5
-          self.households[i].run_turn(interest_rate=(self.interest_rate-self.inflation_expectation)*(1-self.depreciation), price=self.prices[self.households[i].output_good], wage=self.prices[2], run_shares=(i in household_random), prices=self.prices, actual_interest_rate=self.interest_rate, bank=self.get_random_bank())
+          self.households[i].run_turn(interest_rate=max(self.interest_rate-self.inflation_expectation, -0.2)*(1-self.depreciation), price=self.prices[self.households[i].output_good], wage=self.prices[2], run_shares=(i in household_random), prices=self.prices, actual_interest_rate=self.interest_rate, bank=self.get_random_bank())
         elif self.households[i].type2 == "Bank":
           #if self.turn > 20:
           #ipdb.set_trace(context=6)
           for j in self.labour_indexes:
             labour_used += self.households[i].goods_supply[j]
-          self.households[i].run_turn((self.interest_rate-self.inflation_expectation)*(1-self.depreciation), self.interest_rate, self.deposit_rate, self.prices[2],self.prices,(i in household_random), self)
+          self.households[i].run_turn(max(self.interest_rate-self.inflation_expectation, -0.2)*(1-self.depreciation), self.interest_rate, self.deposit_rate, self.prices[2],self.prices,(i in household_random), self)
         elif self.households[i].type2 == "Government":
           self.government.num_children += num_children
           self.households[i].run_turn(self.interest_rate, self.deposit_rate, temp_nominal)

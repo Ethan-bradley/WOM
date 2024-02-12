@@ -41,7 +41,6 @@ class Game(models.Model):
 	Inflation = models.ImageField(default='default_graph.png', upload_to='graphs')
 	Resentment = models.ImageField(default='default_graph.png', upload_to='graphs')
 	Employment = models.ImageField(default='default_graph.png', upload_to='graphs')
-	Consumption = models.ImageField(default='default_graph.png', upload_to='graphs')
 	InterestRate = models.ImageField(default='default_graph.png', upload_to='graphs')
 	GoodsBalance = models.ImageField(default='default_graph.png', upload_to='graphs')
 	ScienceArr = models.ImageField(default='default_graph.png', upload_to='graphs')
